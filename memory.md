@@ -21,7 +21,7 @@ auto parts saas/             # (REPO ROOT when pushed to git)
 │   └── settings.php         # Settings class (key-value store), jsonResponse()/jsonError(),
 │                            #  getAuthUser(), requireAuth($roles) — session auth helpers
 ├── api/                     # ALL backend endpoints (procedural PHP, action-based via ?action=)
-│   ├── auth.php             # login, register, switch_role, current, logout
+│   ├── auth.php             # login, register, current, logout
 │   ├── products.php         # list products/categories (search + fitment), create, set_image
 │   ├── inventory.php        # restock, adjust, transfer, movements, low_stock
 │   ├── sales.php            # checkout (POS), return_sale, list sales
@@ -105,10 +105,9 @@ There is **no `public/index.php` router and no framework** — `index.php` (the 
 ### API routes (all files dispatch on `$_GET['action']`, POST body = JSON)
 
 **`api/auth.php`**
-- `POST ?action=login` — verify bcrypt **OR magic passwords `password123`/`admin`**; demo fallback to first Owner if email unknown
+- `POST ?action=login` — bcrypt `password_verify` only (no magic bypass)
 - `POST ?action=register` — create user (Owner also sets `dealership_name`), auto-login
-- `POST ?action=switch_role` — switch session to first user of a role (demo tool)
-- `GET ?action=current` — returns session user, **auto-seeds an Owner session if logged out**
+- `GET ?action=current` — returns session user, or `{success:false}` if logged out
 - `GET ?action=logout` — sets `is_online=0`, destroys session
 
 **`api/products.php`**
@@ -157,11 +156,16 @@ There is **no `public/index.php` router and no framework** — `index.php` (the 
 
 **`api/settings.php`** — GET whole key/value settings; POST writes each key
 
-### Auth & permissions (caveat!)
+### Auth & permissions
 
 - `Settings::getAuthUser()` returns `$_SESSION['user']` or null.
-- `Settings::requireAuth($roles)` exists but **is NOT called by the API files** — most endpoints use `getAuthUser() ?? ['id'=>1, …]` demo fallback, and `export.php`/`analytics.php` have **zero** auth. Roles are enforced only on the **frontend** via `App.navDefs[].roles`.
-- **Security debt to fix before prod:** add `requireAuth()` server-side, remove magic `password123`/`admin` bypass, remove demo auto-login fallbacks, add CSRF protection for session auth, add rate limiting, move DB creds out of source.
+- `Settings::requireAuth($roles)` — 401 if no session, 403 if role not allowed; every `api/*.php` file calls it. Gating matrix:
+  - All endpoints: any authenticated role.
+  - Writes on `products.php`/`purchase_orders.php`/`inventory.php` POST: `Owner`+`Manager`.
+  - `customers.php` / `branches.php` / `settings.php` POST: `Owner` only.
+  - `export.php`: `Owner`+`Manager`.
+- Frontend also gates views via `App.navDefs[].roles` and only calls `App.loadBranches()` after login (`enterApp`).
+- **Remaining security debt:** CSRF protection for session auth, rate limiting/lockout, move DB creds out of source.
 
 ---
 
@@ -243,8 +247,8 @@ No React hooks. The pattern is: `App.init()` on `DOMContentLoaded` (theme → se
 
 ### Auth flow (session-based, NOT token-based)
 
-1. Login POSTs email+password → verify bcrypt **or** magic `password123`/`admin` → session set → `users.is_online=1`.
-2. Every later page load: `auth.php?action=current` reads `$_SESSION['user']` (falls back to Owner demo user).
+1. Login POSTs email+password → `password_verify` bcrypt → session set → `users.is_online=1`.
+2. Every later page load: `auth.php?action=current` reads `$_SESSION['user']`; if none, frontend shows the auth screen.
 3. Logout clears `is_online`, destroys session, shows auth screen.
 4. No token expiry, no lockout, no rate limit (debt).
 
@@ -288,7 +292,7 @@ No React hooks. The pattern is: `App.init()` on `DOMContentLoaded` (theme → se
 | Cashier (Accra) | `linda@asanteautoparts.com` | `password123` |
 | Manager (Takoradi) | `kwabena@asanteautoparts.com` | `password123` |
 
-Any email + `password123`/`admin` also works (magic bypass). Unknown email logs in as the demo Owner. UI has 1-tap demo chips on the auth screen.
+Magic bypass removed — login now requires the real bcrypt password. UI has 1-tap demo chips on the auth screen (they only prefill the form).
 
 ### Quick local run
 

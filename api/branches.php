@@ -10,6 +10,7 @@ header('Content-Type: application/json');
 $db = Database::getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
+$user = requireAuth();
 
 if ($method === 'GET') {
     // List all branches with staff and today's sales
@@ -33,6 +34,9 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+    if ($user['role'] !== 'Owner') {
+        jsonError('Forbidden. Only the business owner can manage branches and staff.', 403);
+    }
 
     if ($action === 'create_branch') {
         $name = trim($input['name'] ?? '');

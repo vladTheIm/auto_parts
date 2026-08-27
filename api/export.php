@@ -7,6 +7,9 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/settings.php';
 
 $db = Database::getConnection();
+
+requireAuth(['Owner', 'Manager']);
+
 $type = $_GET['type'] ?? 'sales';
 $branchId = (int)($_GET['branch_id'] ?? 1);
 

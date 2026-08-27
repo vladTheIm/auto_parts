@@ -25,26 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
-        // Allow demo login with any matching email or check password_verify
-        if ($user) {
-            if (password_verify($password, $user['password_hash']) || $password === 'password123' || $password === 'admin') {
-                unset($user['password_hash']);
-                $_SESSION['user'] = $user;
-                
-                // Mark user online
-                $db->prepare("UPDATE users SET is_online = 1 WHERE id = ?")->execute([$user['id']]);
+        if ($user && password_verify($password, $user['password_hash'])) {
+            unset($user['password_hash']);
+            $_SESSION['user'] = $user;
 
-                jsonResponse(['success' => true, 'user' => $user]);
-            }
-        }
+            // Mark user online
+            $db->prepare("UPDATE users SET is_online = 1 WHERE id = ?")->execute([$user['id']]);
 
-        // Demo fallback: If user doesn't exist, sign in as the default Owner
-        $stmt = $db->query("SELECT u.*, b.name AS branch_name FROM users u LEFT JOIN branches b ON u.branch_id = b.id WHERE u.role = 'Owner' LIMIT 1");
-        $fallbackUser = $stmt->fetch();
-        if ($fallbackUser) {
-            unset($fallbackUser['password_hash']);
-            $_SESSION['user'] = $fallbackUser;
-            jsonResponse(['success' => true, 'user' => $fallbackUser, 'demo' => true]);
+            jsonResponse(['success' => true, 'user' => $user]);
         }
 
         jsonError('Invalid email or password.');
@@ -87,30 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         jsonResponse(['success' => true, 'user' => $newUser]);
     }
 
-    if ($action === 'switch_role') {
-        $role = $input['role'] ?? 'Owner';
-        $stmt = $db->prepare("SELECT u.*, b.name AS branch_name FROM users u LEFT JOIN branches b ON u.branch_id = b.id WHERE u.role = ? LIMIT 1");
-        $stmt->execute([$role]);
-        $user = $stmt->fetch();
-        if ($user) {
-            unset($user['password_hash']);
-            $_SESSION['user'] = $user;
-            jsonResponse(['success' => true, 'user' => $user]);
-        }
-        jsonError('Role user not found.');
-    }
+    
 }
 
 if ($action === 'current') {
     $user = getAuthUser();
     if (!$user) {
-        // Auto-seed session for immediate demo preview
-        $stmt = $db->query("SELECT u.*, b.name AS branch_name FROM users u LEFT JOIN branches b ON u.branch_id = b.id WHERE u.role = 'Owner' LIMIT 1");
-        $user = $stmt->fetch();
-        if ($user) {
-            unset($user['password_hash']);
-            $_SESSION['user'] = $user;
-        }
+        jsonResponse(['success' => false]);
     }
     jsonResponse(['success' => true, 'user' => $user]);
 }

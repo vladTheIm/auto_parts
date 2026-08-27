@@ -9,6 +9,8 @@ require_once __DIR__ . '/../config/settings.php';
 header('Content-Type: application/json');
 $db = Database::getConnection();
 
+requireAuth();
+
 // 1. Total revenue today & all-time
 $today = date('Y-m-d 00:00:00');
 $todaySales = (float)$db->query("SELECT COALESCE(SUM(grand_total), 0) FROM sales WHERE created_at >= '{$today}'")->fetchColumn();

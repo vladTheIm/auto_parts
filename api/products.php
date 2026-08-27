@@ -11,6 +11,7 @@ $db = Database::getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
 $branchId = (int)($_GET['branch_id'] ?? ($_SESSION['user']['branch_id'] ?? 1));
+$user = requireAuth();
 
 // GET: List products, categories, vehicle fitment lookup
 if ($method === 'GET') {
@@ -58,6 +59,9 @@ if ($method === 'GET') {
 // POST: Add new product, edit product, or upload photo
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+    if (!in_array($user['role'], ['Owner', 'Manager'])) {
+        jsonError('Forbidden. Only managers can modify the catalog.', 403);
+    }
 
     if ($action === 'create') {
         $name = trim($input['name'] ?? '');

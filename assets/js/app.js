@@ -11,7 +11,6 @@ const App = {
   init() {
     this.initTheme();
     this.checkSession();
-    this.loadBranches();
   },
 
   toggleMobileSidebar(open) {
@@ -102,6 +101,8 @@ const App = {
   enterApp() {
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('appShell').style.display = 'block';
+
+    this.loadBranches();
 
     document.getElementById('userName').textContent = this.currentUser.name;
     document.getElementById('userRole').textContent = this.currentUser.role;

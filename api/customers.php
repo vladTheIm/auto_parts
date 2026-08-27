@@ -10,6 +10,7 @@ header('Content-Type: application/json');
 $db = Database::getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
+$user = requireAuth();
 
 if ($method === 'GET') {
     $search = trim($_GET['search'] ?? '');
@@ -29,6 +30,9 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+    if ($user['role'] !== 'Owner') {
+        jsonError('Forbidden. Only the business owner can manage garage accounts.', 403);
+    }
 
     if ($action === 'create') {
         $name = trim($input['name'] ?? '');

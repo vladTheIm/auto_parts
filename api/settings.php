@@ -8,6 +8,7 @@ require_once __DIR__ . '/../config/settings.php';
 
 header('Content-Type: application/json');
 $method = $_SERVER['REQUEST_METHOD'];
+$user = requireAuth();
 
 if ($method === 'GET') {
     jsonResponse(['success' => true, 'settings' => Settings::getAll()]);
@@ -15,6 +16,10 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+
+    if ($user['role'] !== 'Owner') {
+        jsonError('Forbidden. Only the business owner can change settings.', 403);
+    }
     
     foreach ($input as $key => $val) {
         Settings::set($key, trim($val));

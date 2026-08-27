@@ -10,7 +10,7 @@ header('Content-Type: application/json');
 $db = Database::getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
-$user = getAuthUser() ?? ['id' => 1, 'name' => 'Cashier Demo', 'role' => 'Owner'];
+$user = requireAuth();
 
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;

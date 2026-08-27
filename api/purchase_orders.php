@@ -10,6 +10,7 @@ header('Content-Type: application/json');
 $db = Database::getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
+$user = requireAuth();
 $branchId = (int)($_GET['branch_id'] ?? ($_SESSION['user']['branch_id'] ?? 1));
 
 if ($method === 'GET') {
@@ -32,6 +33,9 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+    if (!in_array($user['role'], ['Owner', 'Manager'])) {
+        jsonError('Forbidden. Purchase orders require a manager role.', 403);
+    }
 
     if ($action === 'create') {
         $supplierId = (int)($input['supplier_id'] ?? 0);

@@ -10,7 +10,7 @@ header('Content-Type: application/json');
 $db = Database::getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
-$user = getAuthUser() ?? ['id' => 1, 'name' => 'Demo User', 'role' => 'Manager', 'branch_id' => 1];
+$user = requireAuth();
 $branchId = (int)($user['branch_id'] ?? 1);
 
 if ($method === 'GET') {

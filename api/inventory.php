@@ -11,10 +11,13 @@ $db = Database::getConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
 $branchId = (int)($_GET['branch_id'] ?? ($_SESSION['user']['branch_id'] ?? 1));
-$user = getAuthUser() ?? ['id' => 1, 'name' => 'Manager Demo', 'role' => 'Manager'];
+$user = requireAuth();
 
 if ($method === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+    if (!in_array($user['role'], ['Owner', 'Manager'])) {
+        jsonError('Forbidden. Inventory management requires a manager role.', 403);
+    }
 
     if ($action === 'restock') {
         $productId = (int)($input['product_id'] ?? 0);
