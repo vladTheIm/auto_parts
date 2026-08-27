@@ -503,6 +503,12 @@ Before prod, update these to real credentials and consider extracting to an igno
 |---|---|---|---|
 | 2026-08-27 | `1eff0f8` | Initial commit (26 files) | ✅ VPS `/var/www/torque` |
 | 2026-08-27 | `eb43b85` | MySQL-compat fix (MAX→CASE WHEN), env-overridable DB creds | ✅ VPS |
-| 2026-08-27 | — | VPS setup: PHP 8.3-FPM + MariaDB 10.11 installed, DB `torque_autoparts` + `torque` user, nginx site on **8081/8444**, seed data auto-loaded (verified via `api/analytics.php`) | ⏸ blocked on ports in Hostinger firewall |
+| 2026-08-27 | — | VPS setup: PHP 8.3-FPM + MariaDB 10.11 installed, DB `torque_autoparts` + `torque` user, nginx site on **8081/8444**, seed data auto-loaded (verified via `api/analytics.php`) | ✅ **LIVE** — https://srv1810937.hstgr.cloud:8444/ |
+
+**Production URLs (active 2026-08-27):**
+- `https://srv1810937.hstgr.cloud:8444/` — HTTPS (uses letsencrypt cert)
+- `http://srv1810937.hstgr.cloud:8081/` — HTTP
+- Firewall group on Hostinger allows TCP `22, 80, 443, 8080, 8443, 8081, 8444`. CyberPanel 8090 / Web Terminal 8888 intentionally NOT opened (not used).
+- Daily reminder: **3306 (MariaDB) is closed to the internet** — do not open it.
 
 *Append rows here on every production deploy, mirroring the SchoolPro deploy-log practice.*
