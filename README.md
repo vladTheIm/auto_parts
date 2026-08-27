@@ -1,6 +1,6 @@
-# Torque — Auto Parts OS & SaaS
+# SpareStack — Auto Parts OS & SaaS
 
-Torque is a production-ready **Auto Parts Dealership Operating System** built with **HTML5, CSS3, JavaScript, PHP 8+, and MySQL / SQLite**.
+SpareStack is a production-ready **Auto Parts Dealership Operating System** built with **HTML5, CSS3, JavaScript, PHP 8+, and MySQL / SQLite**.
 
 ---
 

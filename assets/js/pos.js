@@ -1,5 +1,5 @@
 /**
- * Torque Auto Parts OS - Point of Sale (POS) Engine
+ * SpareStack Auto Parts OS - Point of Sale (POS) Engine
  * Extended with: Wholesale/Retail Pricing, Proforma Quotations & WhatsApp Receipt Sharing
  */
 
@@ -299,7 +299,7 @@ const POS = {
       grand_total: sub + vat,
       items: this.cart.map(c => ({ product_name: c.name, quantity: c.qty, total_price: c.price * c.qty })),
       dealership: {
-        dealership_name: 'Torque Auto Parts OS',
+        dealership_name: 'SpareStack Auto Parts OS',
         dealership_tagline: 'OFFICIAL PROFORMA QUOTATION',
         address: 'Plot 14 Harper Road, Adum, Kumasi',
         phone: '+233 32 202 4491',
@@ -368,7 +368,7 @@ const POS = {
       `*Items:*%0A${itemsText}%0A%0A` +
       `*Total Amount:* GHS ${Number(d.grand_total).toFixed(2)}%0A` +
       `*Payment:* ${d.payment_method}%0A%0A` +
-      `_Thank you for choosing Torque Auto Parts!_`;
+      `_Thank you for choosing SpareStack Auto Parts!_`;
 
     const phone = prompt('Enter customer WhatsApp Phone Number (with country code, e.g. 233244123456) or leave blank to choose contact:', '');
     const url = phone ? `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${message}` : `https://wa.me/?text=${message}`;

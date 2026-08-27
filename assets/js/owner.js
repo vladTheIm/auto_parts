@@ -1,5 +1,5 @@
 /**
- * Torque Auto Parts OS - Owner Dashboard, Multi-Branch & Settings Module
+ * SpareStack Auto Parts OS - Owner Dashboard, Multi-Branch & Settings Module
  */
 
 const Owner = {

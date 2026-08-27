@@ -1,5 +1,5 @@
 -- ==========================================================
--- Torque Auto Parts OS - Relational Database Schema
+-- SpareStack Auto Parts OS - Relational Database Schema
 -- Compatible with MySQL 5.7+ / 8.0+ / MariaDB / SQLite
 -- ==========================================================
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Customers & Mechanic Accounts API
+ * SpareStack Auto Parts OS - Customers & Mechanic Accounts API
  */
 
 require_once __DIR__ . '/../config/database.php';

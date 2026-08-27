@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Branches & Staff Management API
+ * SpareStack Auto Parts OS - Branches & Staff Management API
  */
 
 require_once __DIR__ . '/../config/database.php';
@@ -64,7 +64,7 @@ if ($method === 'POST') {
     if ($action === 'add_staff') {
         $branchId = (int)($input['branch_id'] ?? 1);
         $name = trim($input['name'] ?? '');
-        $email = trim($input['email'] ?? strtolower(str_replace(' ', '.', $name)) . '@torque.com');
+        $email = trim($input['email'] ?? strtolower(str_replace(' ', '.', $name)) . '@sparestack.com');
         $role = $input['role'] ?? 'Cashier';
         $password = 'password123';
 

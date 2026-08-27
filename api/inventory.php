@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Inventory & Stock Movements API
+ * SpareStack Auto Parts OS - Inventory & Stock Movements API
  */
 
 require_once __DIR__ . '/../config/database.php';

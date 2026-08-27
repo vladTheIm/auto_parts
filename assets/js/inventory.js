@@ -1,5 +1,5 @@
 /**
- * Torque Auto Parts OS - Inventory & Fitment Management
+ * SpareStack Auto Parts OS - Inventory & Fitment Management
  * Extended with: Inter-Branch Stock Transfers & Sales Returns
  */
 

@@ -1,5 +1,5 @@
 /**
- * Torque Auto Parts OS - Operations (Shifts, Cash Reconciliation & Purchase Orders)
+ * SpareStack Auto Parts OS - Operations (Shifts, Cash Reconciliation & Purchase Orders)
  */
 
 const Ops = {

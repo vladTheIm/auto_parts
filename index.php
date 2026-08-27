@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque — Auto Parts OS
+ * SpareStack — Auto Parts OS
  * Complete Auto Parts Dealership & Multi-Branch Operating System
  */
 require_once __DIR__ . '/config/database.php';
@@ -24,7 +24,7 @@ $settings = Settings::getAll();
 <div id="authScreen">
   <!-- Desktop Hero -->
   <div class="auth-brand">
-    <div class="top"><span class="mark">T</span>Torque OS</div>
+    <div class="top"><span class="mark">S</span>SpareStack OS</div>
     <div class="pitch">
       <h2>Run every branch of your auto parts business from one screen.</h2>
       <p>Instant POS checkout, vehicle part fitment lookup, live branch inventory, and supplier purchase orders.</p>
@@ -51,7 +51,7 @@ $settings = Settings::getAll();
       <div class="auth-mobile-header">
         <div class="top-logo">
           <span class="auth-brand" style="display:inline-flex; width:30px; height:30px; border-radius:8px; background:var(--lime); color:#120C25; align-items:center; justify-content:center; font-weight:800; font-size:15px; padding:0; flex:none;">T</span>
-          <span>Torque OS</span>
+          <span>SpareStack OS</span>
         </div>
         <p>Auto Parts & Workshop Management</p>
       </div>
@@ -99,7 +99,7 @@ $settings = Settings::getAll();
         <input id="signupPassword" type="password" placeholder="Create a password" autocomplete="new-password">
         <div class="errline" id="signupErr">All fields are required.</div>
         <button class="authbtn" onclick="App.doSignup()">Create Account</button>
-        <div class="authfoot">By signing up, you agree to Torque's terms of service.</div>
+        <div class="authfoot">By signing up, you agree to SpareStack's terms of service.</div>
       </div>
     </div>
   </div>
@@ -114,7 +114,7 @@ $settings = Settings::getAll();
     <!-- Sidebar Drawer -->
     <div class="sidebar" id="appSidebar">
       <div class="brand">
-        <span class="mark">T</span>Torque OS
+        <span class="mark">S</span>SpareStack OS
       </div>
       <nav id="sideNav"></nav>
 

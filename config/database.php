@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Database Configuration & Connection
+ * SpareStack Auto Parts OS - Database Configuration & Connection
  * Supports MySQL (XAMPP default) with automatic SQLite fallback for zero-config startup.
  */
 

@@ -1,5 +1,7 @@
-# Torque — Auto Parts OS & SaaS — Codebase Knowledge Base
+# SpareStack — Auto Parts OS & SaaS — Codebase Knowledge Base
 
+> **Branding = SpareStack.** Infra names are intentionally UNCHANGED (branding-only rename): DB `torque_autoparts`, sqlite `database/torque.sqlite`, DB user `torque`, VPS `/var/www/torque`, nginx `sites-enabled/torque`, env vars `TORQUE_DB_*`, localStorage `torque_theme`. Only user-facing strings ("SpareStack", `@sparestack.com`, CSVs `SpareStack_*.csv`, visible settings) were renamed.
+>
 > **Purpose:** This file contains everything a coding agent needs to work on this codebase without searching. Update this file whenever architecture changes.
 >
 > **IMPORTANT:** This project is **NOT a git repo yet** — spawn it on GitHub/GitLab before first production deploy (see [Deployment](#vps--production-access)).
@@ -30,7 +32,7 @@ auto parts saas/             # (REPO ROOT when pushed to git)
 │   ├── purchase_orders.php  # suppliers, list POs, create, receive (auto-restock)
 │   ├── shifts.php           # current shift, clock_in, clock_out (drawer reconciliation)
 │   ├── analytics.php        # dashboard KPIs, payment breakdown, top parts, recent sales
-│   ├── export.php           # CSVs: Torque_Sales_Report_*.csv, Inventory_Valuation_*.csv
+│   ├── export.php           # CSVs: SpareStack_Sales_Report_*.csv, Inventory_Valuation_*.csv
 │   └── settings.php         # GET/POST dealership settings (name, tagline, VAT, currency…)
 ├── database/
 │   ├── schema.sql           # MySQL DDL (13 tables) — executed by initMysql()
@@ -136,7 +138,7 @@ There is **no `public/index.php` router and no framework** — `index.php` (the 
 **`api/branches.php`**
 - `GET` — branches + staff array + `sales_today` per branch
 - `POST ?action=create_branch` — create + seed stock rows from product master (qty 10)
-- `POST ?action=add_staff` — create staff user (pw `password123`), default email `name@torque.com`
+- `POST ?action=add_staff` — create staff user (pw `password123`), default email `name@sparestack.com`
 - `POST ?action=toggle_staff_online` — flip `users.is_online`
 
 **`api/purchase_orders.php`**
@@ -315,7 +317,7 @@ curl "http://localhost:8000/api/products.php?branch_id=1"
 
 ## VPS / Production Access
 
-**Hosting: Torque will live on the SAME VPS as SchoolPro** (deployment workflow below is therefore shared).
+**Hosting: SpareStack will live on the SAME VPS as SchoolPro** (deployment workflow below is therefore shared).
 
 ### Server Details
 
@@ -331,7 +333,7 @@ curl "http://localhost:8000/api/products.php?branch_id=1"
 | Web server | nginx (site file `/etc/nginx/sites-enabled/torque`) → PHP 8.3-FPM (`unix:/run/php/php8.3-fpm.sock`) |
 | Database | MariaDB 10.11 on VPS, DB `torque_autoparts`, user `torque` (pw recorded in that nginx file's `fastcgi_param TORQUE_DB_PASS`) |
 | Existing sites (untouched) | hotelpro (80 / 8080 / 8443), sms-web (443) |
-| PHP-FPM site port conflict warning | two `server_name srv1810937.hstgr.cloud` blocks exist on 8080/8443 (hotelpro) and 443 (sms-web) — do NOT reuse those serving Torque |
+| PHP-FPM site port conflict warning | two `server_name srv1810937.hstgr.cloud` blocks exist on 8080/8443 (hotelpro) and 443 (sms-web) — do NOT reuse those serving SpareStack |
 
 ### Spawning git (first step before deploy)
 
@@ -340,7 +342,7 @@ Not yet a repo. Do once:
 ```bash
 git init
 git add .
-git commit -m "Initial Torque Auto Parts OS"
+git commit -m "Initial SpareStack Auto Parts OS"
 git remote add origin <your-github-repo-url>
 git branch -M main
 git push -u origin main

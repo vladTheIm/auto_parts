@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Executive Dashboard & Analytics API
+ * SpareStack Auto Parts OS - Executive Dashboard & Analytics API
  */
 
 require_once __DIR__ . '/../config/database.php';

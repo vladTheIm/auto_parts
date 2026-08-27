@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Shifts & Cash Drawer Reconciliation API
+ * SpareStack Auto Parts OS - Shifts & Cash Drawer Reconciliation API
  */
 
 require_once __DIR__ . '/../config/database.php';

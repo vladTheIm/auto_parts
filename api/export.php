@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Financial & Inventory CSV Export API
+ * SpareStack Auto Parts OS - Financial & Inventory CSV Export API
  */
 
 require_once __DIR__ . '/../config/database.php';
@@ -15,7 +15,7 @@ $branchId = (int)($_GET['branch_id'] ?? 1);
 
 if ($type === 'sales') {
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="Torque_Sales_Report_' . date('Y-m-d') . '.csv"');
+    header('Content-Disposition: attachment; filename="SpareStack_Sales_Report_' . date('Y-m-d') . '.csv"');
 
     $output = fopen('php://output', 'w');
     fputcsv($output, ['Invoice Number', 'Date', 'Branch', 'Cashier', 'Customer', 'Subtotal (GHS)', 'VAT 15% (GHS)', 'Grand Total (GHS)', 'Payment Method', 'Status']);
@@ -48,7 +48,7 @@ if ($type === 'sales') {
 
 if ($type === 'inventory') {
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="Torque_Inventory_Valuation_' . date('Y-m-d') . '.csv"');
+    header('Content-Disposition: attachment; filename="SpareStack_Inventory_Valuation_' . date('Y-m-d') . '.csv"');
 
     $output = fopen('php://output', 'w');
     fputcsv($output, ['Part Name', 'SKU', 'OEM Number', 'Vehicle Fitment', 'In Stock', 'Unit Cost (GHS)', 'Unit Selling Price (GHS)', 'Total Cost Value (GHS)', 'Total Retail Value (GHS)', 'Projected Profit Margin (GHS)']);

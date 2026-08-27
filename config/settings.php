@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Global Settings & Helpers
+ * SpareStack Auto Parts OS - Global Settings & Helpers
  */
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -32,10 +32,10 @@ class Settings {
         $stmt = $db->query("SELECT setting_key, setting_value FROM settings");
         $rows = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
         return array_merge([
-            'dealership_name' => 'Torque Auto Parts OS',
+            'dealership_name' => 'SpareStack Auto Parts OS',
             'dealership_tagline' => 'Quality Parts & Workshop Supplies',
             'phone' => '+233 24 000 0000',
-            'email' => 'sales@torqueautoparts.com',
+            'email' => 'sales@sparestack.com',
             'address' => 'Plot 14, Commercial District, Kumasi',
             'currency_symbol' => 'GHS',
             'currency_name' => 'Ghanaian Cedi',

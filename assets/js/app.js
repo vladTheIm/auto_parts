@@ -1,5 +1,5 @@
 /**
- * Torque Auto Parts OS - Master Application Controller
+ * SpareStack Auto Parts OS - Master Application Controller
  */
 
 const App = {
@@ -179,7 +179,7 @@ const App = {
     this.toggleMobileSidebar(false);
 
     const titles = { dashboard: 'Dashboard Overview', pos: 'Point of Sale / Checkout', ops: 'Shop Operations & Stock', owner: 'Owner Multi-Branch Console' };
-    document.getElementById('pageTitle').textContent = titles[id] || 'Torque';
+    document.getElementById('pageTitle').textContent = titles[id] || 'SpareStack';
 
     // Trigger module loads
     if (id === 'pos' && typeof POS !== 'undefined') POS.init();

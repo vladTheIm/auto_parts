@@ -1,6 +1,6 @@
 <?php
 /**
- * Torque Auto Parts OS - Schema Auto-Migration & Seed Data Initializer
+ * SpareStack Auto Parts OS - Schema Auto-Migration & Seed Data Initializer
  */
 
 class SeedData {
@@ -261,10 +261,10 @@ class SeedData {
         // 10. Default Settings
         $db->exec("
             INSERT INTO settings (setting_key, setting_value) VALUES
-            ('dealership_name', 'Torque Auto Parts OS'),
+            ('dealership_name', 'SpareStack Auto Parts OS'),
             ('dealership_tagline', 'Original Genuine & OEM Parts'),
             ('phone', '+233 32 202 4491'),
-            ('email', 'sales@torqueautoparts.com'),
+            ('email', 'sales@sparestack.com'),
             ('address', 'Plot 14 Harper Road, Adum, Kumasi'),
             ('currency_symbol', 'GHS'),
             ('currency_name', 'Ghanaian Cedi'),
