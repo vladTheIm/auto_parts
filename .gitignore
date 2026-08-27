@@ -1,0 +1,13 @@
+# --- Data / generated ---
+database/torque.sqlite
+
+# --- Logs ---
+*.log
+
+# --- Deploy tooling / helpers ---
+backups/
+plink.exe
+
+# --- OS noise ---
+.DS_Store
+Thumbs.db

@@ -1,0 +1,503 @@
+# Torque — Auto Parts OS & SaaS — Codebase Knowledge Base
+
+> **Purpose:** This file contains everything a coding agent needs to work on this codebase without searching. Update this file whenever architecture changes.
+>
+> **IMPORTANT:** This project is **NOT a git repo yet** — spawn it on GitHub/GitLab before first production deploy (see [Deployment](#vps--production-access)).
+
+---
+
+## Project Structure
+
+```
+auto parts saas/             # (REPO ROOT when pushed to git)
+├── index.php                # LIVE app shell — single page (~700 lines)
+│                            #  PHP-injected <title>, auth screen + 4 views + 11 modals
+├── index.html               # STATIC prototype — self-contained (inline CSS, no backend,
+│                            #  no external JS). Older/parallel mock of the same 4 views.
+│                            #  Do NOT edit casually; index.php is the real app.
+├── config/
+│   ├── database.php         # Database::getConnection() — MySQL first, SQLite fallback,
+│   │                        #  auto-create DB + auto-migrate/seed via SeedData
+│   └── settings.php         # Settings class (key-value store), jsonResponse()/jsonError(),
+│                            #  getAuthUser(), requireAuth($roles) — session auth helpers
+├── api/                     # ALL backend endpoints (procedural PHP, action-based via ?action=)
+│   ├── auth.php             # login, register, switch_role, current, logout
+│   ├── products.php         # list products/categories (search + fitment), create, set_image
+│   ├── inventory.php        # restock, adjust, transfer, movements, low_stock
+│   ├── sales.php            # checkout (POS), return_sale, list sales
+│   ├── customers.php        # list/search customers, create, pay_credit
+│   ├── branches.php         # branches+staff+today's sales, create_branch, add_staff
+│   ├── purchase_orders.php  # suppliers, list POs, create, receive (auto-restock)
+│   ├── shifts.php           # current shift, clock_in, clock_out (drawer reconciliation)
+│   ├── analytics.php        # dashboard KPIs, payment breakdown, top parts, recent sales
+│   ├── export.php           # CSVs: Torque_Sales_Report_*.csv, Inventory_Valuation_*.csv
+│   └── settings.php         # GET/POST dealership settings (name, tagline, VAT, currency…)
+├── database/
+│   ├── schema.sql           # MySQL DDL (13 tables) — executed by initMysql()
+│   └── seed_data.php        # SeedData::initialize(): SQLite DDL inline + seedCoreData()
+│                            #  (branches, 6 users, 7 categories, 8 products, stock, etc.)
+├── assets/
+│   ├── css/
+│   │   └── app.css          # ALL styling (~858 lines) — CSS vars, light/dark themes
+│   └── js/                  # No build step. Plain <script> tags, loaded after DOM shell.
+│       ├── app.js           # App controller: session, branches, nav, views, theme, api()
+│       ├── pos.js           # POS engine: cart, payments, receipts, quotations, WhatsApp
+│       ├── inventory.js     # Inventory table, restock, transfers, returns, audit ledger
+│       ├── ops.js           # Shift clock in/out + reconcile, purchase orders
+│       └── owner.js         # Multi-branch console, garage credits, settings
+├── README.md                # Product overview, quick start (XAMPP / php -S)
+└── memory.md                # This file
+```
+
+**Key: NO framework, NO TypeScript, NO bundler, NO Composer, NO build step. Plain PHP + plain JS module singletons.**
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Vanilla HTML5 + CSS3 + JS (SPA: 4 hidden `.view` divs shown by class toggle) |
+| Backend | PHP 8+ (procedural API files, PDO, no framework, no router) |
+| Database | MySQL / MariaDB (XAMPP default `root`/``, db `torque_autoparts`), AUTO-fallback to SQLite (`database/torque.sqlite`) |
+| Auth | PHP sessions (`$_SESSION['user']`) + bcrypt (`password_hash`/`password_verify`) |
+| Payments | Cash / MoMo / Card / Credit (tender enum; Credit writes `customers.credit_balance`) |
+| Receipts | 80mm thermal styled HTML receipt in modal; `window.print()`; WhatsApp share via `wa.me` |
+| Exports | PHP `fputcsv()` streaming CSVs (sales journal, inventory valuation) |
+| Hosting | Same VPS as SchoolPro — see [VPS / Production Access](#vps--production-access) |
+
+**Key:** Database layer is **dual-driver aware**. Upserts (`ON CONFLICT` vs `ON DUPLICATE KEY UPDATE`) branch on `Database::getDriver()` (see `config/database.php:77`, `api/inventory.php:39`, `api/inventory.php:119`).
+
+---
+
+## Server Architecture
+
+### Startup (no entrypoint router)
+
+Bootstrap is always the **same three requires** at the top of every `api/*.php`:
+
+```
+config/database.php  → Database::getConnection()  (creates DB if missing, runs schema, seeds)
+config/settings.php  → Settings helper + json helpers + session auth
+header('Content-Type: application/json') + dispatch on $_GET['action']
+```
+
+There is **no `public/index.php` router and no framework** — `index.php` (the HTML shell) is served directly by Apache/PHP and talks to `api/*.php?action=…` via `fetch()`.
+
+### Database init (`config/database.php`)
+
+1. Try MySQL at `127.0.0.1:3306`, db `torque_autoparts`, user `root`, empty pass.
+2. On failure, try to `CREATE DATABASE IF NOT EXISTS torque_autoparts`, then reconnect.
+3. If MySQL still fails → fallback to SQLite file `database/torque.sqlite` (auto-created).
+4. `checkAndMigrate()` → `SeedData::initialize($pdo, $driver)`:
+   - MySQL → executes `database/schema.sql` (`CREATE TABLE IF NOT EXISTS`).
+   - SQLite → runs the inline SQLite DDL block in `seed_data.php`.
+   - `seedCoreData()` seeds data **only if `branches` is empty** (idempotent).
+
+### Seed data (one-time, `database/seed_data.php`)
+
+- 3 branches: Kumasi Main, Accra Spintex, Takoradi Depot
+- 6 users (all pw = `password123`, bcrypt): Owner Efua, Mgrs Kojo/Yaw/Kwabena, Cashiers Ama/Linda
+- 7 categories + 8 demo parts (with OEM numbers + vehicle fitment strings)
+- `branch_stock` rows for all branch×product combos
+- 3 mechanic customers (2 with open balances), 3 suppliers, 2 POs, 1 open shift, default settings
+
+### API routes (all files dispatch on `$_GET['action']`, POST body = JSON)
+
+**`api/auth.php`**
+- `POST ?action=login` — verify bcrypt **OR magic passwords `password123`/`admin`**; demo fallback to first Owner if email unknown
+- `POST ?action=register` — create user (Owner also sets `dealership_name`), auto-login
+- `POST ?action=switch_role` — switch session to first user of a role (demo tool)
+- `GET ?action=current` — returns session user, **auto-seeds an Owner session if logged out**
+- `GET ?action=logout` — sets `is_online=0`, destroys session
+
+**`api/products.php`**
+- `GET` (default) — products + `branch_stock` joined, filter by `category` slug + `search` (name/SKU/barcode/OEM/fits)
+- `GET ?action=categories` — category list
+- `POST ?action=create` — new part; assigns stock row to **all branches**, logs movement
+- `POST ?action=set_image` — base64 photo into `products.image_url` (LONGTEXT)
+
+**`api/inventory.php`**
+- `POST ?action=restock` — upsert `branch_stock`, bump master stock, audit movement
+- `POST ?action=adjust` — set exact target qty, log diff
+- `POST ?action=transfer` — **transactional** deduct source / add dest / 2 audit rows
+- `GET ?action=movements` — stock_movements ledger for branch (optionally per product)
+- `GET ?action=low_stock` — parts at/below reorder level
+
+**`api/sales.php`**
+- `POST ?action=checkout` — **transactional**: totals (VAT from settings), invoice `INV-YYMMDD-XXXX`, insert sale + items, decrement branch+master stock, audit `POS Sale`, credit customers on `Credit` tender, returns full receipt payload
+- `POST ?action=return_sale` — mark `Refunded`, restock items, reverse customer credit
+- `GET` — recent sales by branch (`limit` param)
+
+**`api/customers.php`**
+- `GET` — list/search mechanics (name/workshop/phone)
+- `POST ?action=create` — register garage account with `credit_limit`
+- `POST ?action=pay_credit` — `credit_balance = MAX(0, balance - amount)`
+
+**`api/branches.php`**
+- `GET` — branches + staff array + `sales_today` per branch
+- `POST ?action=create_branch` — create + seed stock rows from product master (qty 10)
+- `POST ?action=add_staff` — create staff user (pw `password123`), default email `name@torque.com`
+- `POST ?action=toggle_staff_online` — flip `users.is_online`
+
+**`api/purchase_orders.php`**
+- `GET ?action=suppliers` — supplier list
+- `GET` (default) — POs joined with supplier/product/branch
+- `POST ?action=create` — PO number `PO-YYYY-XXXX`; cost auto-looked-up if omitted
+- `POST ?action=receive` — mark Received, add to branch + master stock, audit `PO Received`
+
+**`api/shifts.php`**
+- `GET ?action=current` — open shift + `sales_summary` (total/cash/momo/card/count) + `expected_cash_drawer`
+- `POST ?action=clock_in` — opens shift with float; 1 open shift per user
+- `POST ?action=clock_out` — computes expected = float + cash sales, variance, closes shift
+
+**`api/analytics.php`** — KPI block (sales today/all-time, orders, online/total staff, branches, low-stock count), payment-method breakdown, top 5 parts, recent 8 sales, settings
+
+**`api/export.php`** — `?type=sales` and `?type=inventory` CSVs (no auth check — see caveats)
+
+**`api/settings.php`** — GET whole key/value settings; POST writes each key
+
+### Auth & permissions (caveat!)
+
+- `Settings::getAuthUser()` returns `$_SESSION['user']` or null.
+- `Settings::requireAuth($roles)` exists but **is NOT called by the API files** — most endpoints use `getAuthUser() ?? ['id'=>1, …]` demo fallback, and `export.php`/`analytics.php` have **zero** auth. Roles are enforced only on the **frontend** via `App.navDefs[].roles`.
+- **Security debt to fix before prod:** add `requireAuth()` server-side, remove magic `password123`/`admin` bypass, remove demo auto-login fallbacks, add CSRF protection for session auth, add rate limiting, move DB creds out of source.
+
+---
+
+## Database Schema (13 tables)
+
+Shared by MySQL (`schema.sql`) and SQLite (`seed_data.php`). Money = DECIMAL/REAL(10,2), ids auto-increment, timestamps default `CURRENT_TIMESTAMP`.
+
+- `branches` — id, name, location, phone, is_active
+- `users` — id, branch_id(FK), name, email(unique), password_hash, role(**Owner|Manager|Cashier**), is_online
+- `categories` — id, name(unique), slug(unique), icon
+- `products` — id, category_id(FK), name, **sku(unique)**, **barcode**, **oem_number**, **fits_vehicles**, cost_price, selling_price, stock_quantity (master), reorder_level, **image_url** (LONGTEXT/base64), created_at
+- `branch_stock` — id, branch_id(FK), product_id(FK), quantity, reorder_level; **UNIQUE(branch_id, product_id)**
+- `stock_movements` — ledger: product_id, branch_id, user_id, change_qty, previous_qty, new_qty, reason (`POS Sale`, `Initial Catalog Add`, `Inter-Branch Transfer Out/In`, `PO Received`, `Sales Return / Refund`, custom restock/adjust), notes, created_at
+- `customers` — id, name, phone, workshop_name, credit_balance, credit_limit (default 2000)
+- `suppliers` — id, name, contact_person, phone, email, address
+- `sales` — id, invoice_number(unique, `INV-yymmdd-XXXX`), branch_id, user_id, customer_id, subtotal, vat_amount, discount_amount, grand_total, payment_method(**Cash|Card|MoMo|Transfer|Credit**), payment_ref, status(Completed|Refunded), created_at
+- `sale_items` — id, sale_id(FK, cascade), product_id, product_name, sku, unit_price, cost_price, quantity, total_price
+- `purchase_orders` — id, po_number(unique, `PO-YYYY-XXXX`), supplier_id, branch_id, product_id, quantity, unit_cost, total_cost, status(**Draft|Ordered|Received|Cancelled**), created_at, received_at
+- `shifts` — id, user_id, branch_id, opened_at, closed_at, opening_float (300 default), closing_cash_counted, expected_cash, cash_variance, status(**Open|Closed**)
+- `settings` — setting_key(PK), setting_value; defaults in `Settings::getAll()` (dealership_name, tagline, phone, email, address, currency_symbol/name, vat_rate, receipt_footer)
+
+---
+
+## Client Architecture
+
+### Routing (view switching, no URL router)
+
+4 views live in `index.php` as hidden `<div class="view">`s inside `#appShell`. `App.showView(id, btn)` toggles `.active`. No hash/URL routing — refresh always lands on Dashboard.
+
+| View id | Title in UI | Roles (front-end gate) | Module |
+|---|---|---|---|
+| `dashboard` | Dashboard Overview | Owner, Manager, Cashier | `App` (KPIs) |
+| `pos` | Point of Sale / Checkout | Owner, Manager, Cashier | `POS` |
+| `ops` | Shop Operations & Stock | **Owner, Manager** | `Inventory` + `Ops` |
+| `owner` | Owner Multi-Branch Console | **Owner** | `Owner` |
+
+### Guard system
+
+- **Nav guard:** `App.navDefs` each declare `roles: [...]`; `App.buildNav()` filters by `App.currentUser.role` (app.js:138). No server-side enforcement (see caveats ↑).
+
+### Shell layout (index.php + app.css)
+
+- **Auth screen** (`#authScreen`): left desktop hero brand panel (gauge graphic), right form card; sign-in/signup tabs; 1-tap demo chips (Owner/Manager/Cashier).
+- **Sidebar** (`#appSidebar`): brand, nav buttons (`#sideNav`), branch switcher (`#globalBranchSelect`), user chip with avatar/name/role + logout.
+- **Topbar**: mobile menu button, page title, current-branch badge, theme toggle (light/dark).
+- **Main workspace**: 4 `.view` panels swapped by class.
+- **Modals**: 11 `.modal-backdrop` overlays toggled with `.show` (restock, transfer, return, audit, add-part, receipt, clock-in, clock-out, PO, branch, customer).
+- **Toast notifications**: `#toastContainer`, appended by `App.toast()`.
+- **Mobile**: sidebar collapses behind `#sidebarBackdrop`, `.mobile-open` class; topbar hamburger.
+
+### Auth state ("AuthContext" but no React)
+
+`App` singleton holds `currentUser`, `currentBranchId`, `branches`, `settings`.
+- `App.checkSession()` → `GET api/auth.php?action=current` → `enterApp()` or `showAuth()`.
+- Login/signup/logout also mutate `App.currentUser` and swap screens.
+- Initial nav view = first allowed item; POS/Ops/Owner modules load lazily when their view opens (`App.showView`, app.js:184).
+
+### API layer
+
+`App.api(endpoint, method = 'GET', data = null)` (app.js:24) — thin `fetch()` wrapper:
+- JSON body when `data` present; parses JSON; throws `Error(json.error)` on `!res.ok`; toasts errors automatically; returns the parsed JSON.
+
+### Component patterns
+
+- **Module singletons:** `const App/POS/Inventory/Ops/Owner = { state, async load(), render…() }` — attached to `window`, invoked from inline `onclick` attributes.
+- **State:** object properties (e.g. `POS.cart`), re-render by rebuilding innerHTML from template literals.
+- **Data lifecycle:** `View load()` → `App.api(...)` → set state → `render*()` into a tbody/grid/list.
+- **Branch refresh:** `App.switchBranch()` re-calls each module's `.load()` that exists (app.js:89).
+- **Forms:** read inputs by id, `trim()`, manual validation with `App.toast(msg,'error')`, then POST.
+- **Loading/empty states:** plain inline strings ("No inventory items recorded.", "No automotive parts found…").
+
+### Custom hook (analog)
+
+No React hooks. The pattern is: `App.init()` on `DOMContentLoaded` (theme → session → branches → which triggers `enterApp()` → nav + first view). Each module exposes `load()`/`init()` idempotently.
+
+---
+
+## Key Patterns
+
+### Auth flow (session-based, NOT token-based)
+
+1. Login POSTs email+password → verify bcrypt **or** magic `password123`/`admin` → session set → `users.is_online=1`.
+2. Every later page load: `auth.php?action=current` reads `$_SESSION['user']` (falls back to Owner demo user).
+3. Logout clears `is_online`, destroys session, shows auth screen.
+4. No token expiry, no lockout, no rate limit (debt).
+
+### Inventory consistency rules
+
+- Every mutation writes: `branch_stock` (per-branch) **and** `products.stock_quantity` (master) **and** a `stock_movements` audit row.
+- Sales checkout, returns, transfers, PO-receive are wrapped in `$db->beginTransaction()`/commit/rollback.
+- POS reads `COALESCE(bs.quantity, p.stock_quantity)` so master stock acts as branch-1 fallback.
+
+### Backup system
+
+**None.** No backup tooling. The SQLite file (`database/torque.sqlite`) is the single-store; back it up by copying the file (or MySQL `mysqldump torque_autoparts`). Suggested prod routine: nightly `mysqldump > /var/www/torque/backups/`.
+
+### File uploads
+
+- **Product photos:** base64 data-URL via FileReader → stored in `products.image_url` (LONGTEXT/TEXT). No size/type/magic-byte validation. **Debt:** move to real file storage + validation.
+
+### Permission system
+
+- **Single tier:** `users.role` char (`Owner`/`Manager`/`Cashier`) gating front-end nav items only.
+- Server endpoints assume demo permission. No per-user privilege granularity.
+
+### Styling system
+
+- Single stylesheet `assets/css/app.css`, CSS variables in `:root`, dark overrides in `[data-theme="dark"]`.
+- Theme persisted as `localStorage.torque_theme`; auto-follows OS `prefers-color-scheme` when not set manually (`App.initTheme`, app.js:202).
+- Tokens: `--accent:#6C3CE9` (purple), `--lime:#7EA600`, `--coral:#E23A5A`, `--amber:#D97706`, `--radius:12px`, shadows `--shadow-sm/md/lg`. Fonts: **Space Grotesk** (headings), **Inter** (body), **IBM Plex Mono** (`.mono` numbers).
+
+---
+
+## Testing
+
+### Test accounts (local XAMPP / `php -S`)
+
+| Role | Email | Password |
+|---|---|---|
+| Business Owner | `efua@asanteautoparts.com` | `password123` |
+| Branch Manager | `kojo@asanteautoparts.com` | `password123` |
+| Cashier | `ama@asanteautoparts.com` | `password123` |
+| Manager (Accra) | `yaw@asanteautoparts.com` | `password123` |
+| Cashier (Accra) | `linda@asanteautoparts.com` | `password123` |
+| Manager (Takoradi) | `kwabena@asanteautoparts.com` | `password123` |
+
+Any email + `password123`/`admin` also works (magic bypass). Unknown email logs in as the demo Owner. UI has 1-tap demo chips on the auth screen.
+
+### Quick local run
+
+```bash
+php -S localhost:8000        # from project root (no build step)
+# then open http://localhost:8000
+```
+
+Alternatively XAMPP: put folder under `C:\xampp\htdocs\torque`, start Apache+MySQL, open `http://localhost/torque/`. DB auto-creates + seeds on first request.
+
+### Smoke test (curl)
+
+```bash
+curl -X POST "http://localhost:8000/api/auth.php?action=login" -H "Content-Type: application/json" -d "{\"email\":\"efua@asanteautoparts.com\",\"password\":\"password123\"}"
+curl "http://localhost:8000/api/analytics.php"
+curl "http://localhost:8000/api/products.php?branch_id=1"
+```
+
+---
+
+## VPS / Production Access
+
+**Hosting: Torque will live on the SAME VPS as SchoolPro** (deployment workflow below is therefore shared).
+
+### Server Details
+
+| Field | Value |
+|---|---|
+| VPS IP | `187.124.215.68` |
+| Hostinger hostname | `srv1810937.hstgr.cloud` |
+| Production URL | `https://srv1810937.hstgr.cloud/torque/` (path TBD once Apache vhost configured) |
+| SSH user | `root` |
+| SSH password | `vlVvM5@r5oT/Tg-)` |
+| SSH host key | `ssh-ed25519 255 SHA256:f9nGShsKpn0oiZA47eqm4UMTShEYl+hGKpAH0VEobPc` |
+| Target app path | `/var/www/torque` (create; sibling of `/var/www/sms-web`) |
+| PHP/DB | Apache + PHP 8 + **MySQL** (SchoolPro uses Postgres — Torque needs its own `torque_autoparts` DB + MySQL user created via `mysql` on the VPS) |
+
+### Spawning git (first step before deploy)
+
+Not yet a repo. Do once:
+
+```bash
+git init
+git add .
+git commit -m "Initial Torque Auto Parts OS"
+git remote add origin <your-github-repo-url>
+git branch -M main
+git push -u origin main
+```
+
+### Deployment workflow (PHP — no build, no bundler, no PM2)
+
+**There is no client build and no long-running Node process.** Shipping = getting updated files onto the VPS and letting Apache serve PHP. For a pure-file change this is just:
+
+```bash
+ssh root@187.124.215.68 "cd /var/www/torque && git pull origin main"
+```
+
+**First-time server setup (one-off):**
+```bash
+ssh root@187.124.215.68
+mkdir -p /var/www/torque
+mysql -u root -p -e "CREATE DATABASE torque_autoparts CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+# configure MySQL root creds in /var/www/torque/config/database.php
+# optionally: Apache vhost + SSL for /torque/
+```
+
+**Full deploy after code changes:**
+1. `git push origin main` from local.
+2. `ssh root@187.124.215.68 "cd /var/www/torque && git pull origin main"`.
+3. If `config/database.php` or `database/*` changed, verify DB migration ran OK on first request.
+4. Test on production (below).
+
+### Using plink.exe (PuTTY CLI — same tool used for SchoolPro)
+
+`plink.exe` lives at the SchoolPro repo root: `C:\Users\USER\Desktop\sms web\plink.exe`. Copy it into this repo root (or reference by full path) — it's the persistent SSH utility.
+
+**Run remote command:**
+```powershell
+$PLINK = "C:\Users\USER\Desktop\sms web\plink.exe"
+& $PLINK -ssh -pw "vlVvM5@r5oT/Tg-)" root@187.124.215.68 -hostkey "ssh-ed25519 255 SHA256:f9nGShsKpn0oiZA47eqm4UMTShEYl+hGKpAH0VEobPc" "cd /var/www/torque && git pull origin main"
+```
+(`echo y` once to trust the host key.)
+
+**Upload a single file via plink (pipe stdin):**
+```powershell
+Get-Content -Raw "api\sales.php" | & $PLINK -ssh -pw "vlVvM5@r5oT/Tg-)" root@187.124.215.68 -hostkey "ssh-ed25519 255 SHA256:f9nGShsKpn0oiZA47eqm4UMTShEYl+hGKpAH0VEobPc" "cat > /var/www/torque/api/sales.php"
+```
+
+**Alternative — Node ssh2 helper** (same pattern as SchoolPro `deploy.js`):
+```javascript
+const { Client } = require('ssh2');
+const conn = new Client();
+conn.on('ready', () => {
+  conn.exec('cd /var/www/torque && git pull origin main', (e, stream) => {
+    stream.on('data', d => process.stdout.write(d.toString()));
+    stream.stderr.on('data', d => process.stderr.write(d.toString()));
+    stream.on('close', () => conn.end());
+  });
+}).connect({ host: '187.124.215.68', port: 22, username: 'root',
+             password: 'vlVvM5@r5oT/Tg-)', readyTimeout: 30000 });
+```
+
+### Testing on Production
+
+1. URL: `https://srv1810937.hstgr.cloud/torque/` (or vhost path).
+2. Login smoke test (curl):
+```bash
+curl -X POST https://srv1810937.hstgr.cloud/torque/api/auth.php?action=login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"efua@asanteautoparts.com","password":"password123"}'
+```
+3. Run a full POS checkout against prod, verify `api/analytics.php` KPIs update.
+4. Verify mobile responsiveness at ≤900px viewport (sidebar/topbar collapse).
+
+---
+
+## Git Ignore Rules
+
+Add to `.gitignore` at repo root:
+
+```
+database/torque.sqlite        # generated SQLite fallback DB — NEVER commit real data
+*.log
+backups/
+.plink-*
+.DS_Store
+Thumbs.db
+```
+
+Note: MySQL mode writes no local files. `database/schema.sql` and `database/seed_data.php` MUST stay tracked (they hold the schema).
+
+---
+
+## Scripts
+
+There is **no `package.json`** (non-Node stack). Equivalent tasks:
+
+| Task | Command |
+|---|---|
+| Local dev server | `php -S localhost:8000` (from project root) |
+| XAMPP local | folder → `C:\xampp\htdocs\torque`, open `http://localhost/torque/` |
+| DB reset (local) | delete `database/torque.sqlite` (SQLite) OR `DROP DATABASE torque_autoparts` (MySQL) → next request re-creates + re-seeds |
+| Smoke test | curl against `api/*.php` (see Testing) |
+| Deploy (file change) | `git push` → `ssh … git pull origin main` |
+| Deploy helper | plink.exe (path from SchoolPro root — see VPS section) |
+
+---
+
+## Environment Variables
+
+**None — configuration is hardcoded PHP.** The production-relevant values live in `config/database.php:17-21`:
+
+```
+MySQL host   = 127.0.0.1        (prod: localhost)
+MySQL port   = 3306
+DB name      = torque_autoparts
+MySQL user   = root
+MySQL pass   = ''               (prod: set a real password)
+```
+
+Before prod, update these to real credentials and consider extracting to an ignored `config/.env` / server environment reads so secrets aren't committed.
+
+---
+
+## Agent Conventions
+
+- **Delete one-off scripts after use.** Do not leave temp files (`_tmp*.js`, test helpers) in the workspace root. Delete them immediately after the task completes. Exception: `plink.exe` is a persistent SSH utility — keep it (copy in from SchoolPro root if needed).
+- Always run changes against BOTH drivers — if you touch SQL, verify it works on MySQL **and** the SQLite fallback (upserts need both `ON CONFLICT` and `ON DUPLICATE KEY UPDATE` branches).
+- `index.html` is a static prototype — prefer editing `index.php` unless the user explicitly says otherwise.
+- Keep the two-source inventory invariant: `branch_stock` + `products.stock_quantity` + `stock_movements` audit row on every mutation.
+
+---
+
+## UI/UX Design Rules
+
+### Forms & Inputs
+- Don't use placeholder as label — always use proper `<label>` elements (the app does this in modals).
+- Add `maxLength` to text inputs (name: 100, email: 150, phone: 20, password: 72).
+- Placeholders are hints only (e.g. "e.g. Corolla, Civic, Elantra…", "e.g. BP-8842").
+- Group related fields, align by information type (2-col grid for cost/price in add-part modal).
+
+### Interaction Patterns
+- Every user action must give feedback: `App.toast(message, 'success'|'error'|'info')` (3.5s auto-dismiss, colored left border).
+- Buttons say what they do: "Complete Sale (Cash) · GHS 1,234.00", "Receive & Restock", "Open Cashier Shift".
+- One primary button per section/modal; secondary actions muted (`btn-dark`).
+- Hover/active affordance on all tappable tiles, cards, chips.
+- Live search-as-you-type in POS (`input` listener), category + vehicle fitment filter chips.
+- Offline-friendly: module loads must not crash when an endpoint 401s (fallbacks already in place).
+
+### Visual Design
+- Use the token palette, don't invent colors: `--accent` (purple, primary), `--lime` (success/stock), `--coral` (danger/low stock), `--amber` (warnings).
+- Mono font (`IBM Plex Mono`) for money, SKUs, invoice/payment refs.
+- Muted status pills (`status-pill ok/low/received/ordered`), stock badges on product cards.
+- Keep border-radius consistent (`--radius:12px` cards, buttons ~9px), soft shadows.
+- Both themes must render the same layout correctly (light default, dark override).
+
+### Consistency
+- Keep one visual system across all 4 views; reuse shared classes (`.kpi-card`, `.data-table`, `.ops-section`, `.btn-primary/.btn-dark`, `.modal`).
+- Inline `onclick` attribute calls are the established pattern — use global singletons (`App`, `POS`, `Inventory`, `Ops`, `Owner`) so inline handlers resolve.
+- Money always formatted `GHS <toFixed(2)>`; empty states always friendly copy + centered.
+- Ensure mobile: sidebar→drawer, tables→scroll, grids→wrap at ≤900px.
+
+---
+
+## Deployment Log
+
+| Date | Commit | Change | Deployed |
+|---|---|---|---|
+| — | — | (repo not yet spawned) | — |
+
+*Append rows here on every production deploy, mirroring the SchoolPro deploy-log practice.*

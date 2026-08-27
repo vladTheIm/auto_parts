@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>Torque — Auto Parts OS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+:root{
+  --bg:#F3F1FA; --panel:#FFFFFF; --panel-raised:#FBFAFF;
+  --ink:#14151F; --ink-soft:#5C5F72; --ink-faint:#9C9FB0;
+  --line:#E4E1F1;
+  --accent:#6C3CE9; --accent-ink:#3D1F94; --accent-tint:#ECE5FD;
+  --lime:#7EA600; --lime-ink:#4C6A00; --lime-tint:#EBF6CE;
+  --coral:#E23A5A; --coral-ink:#8A1030; --coral-tint:#FCE1E7;
+  --radius:12px;
+  --shadow:0 1px 2px rgba(20,10,60,.04), 0 8px 24px rgba(20,10,60,.06);
+}
+[data-theme="dark"]{
+  --bg:#0C0D14; --panel:#15161F; --panel-raised:#1B1C28;
+  --ink:#F1F0FA; --ink-soft:#A6A8BD; --ink-faint:#6E7085;
+  --line:#282A3B;
+  --accent:#9A7BFA; --accent-ink:#E4DBFF; --accent-tint:#241C42;
+  --lime:#C6FF3D; --lime-ink:#E9FFB0; --lime-tint:#23300A;
+  --coral:#FF7A8E; --coral-ink:#FFD3DA; --coral-tint:#3A1420;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; font-size:14px; transition:background .2s,color .2s;}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif; font-weight:600; margin:0; letter-spacing:-.2px;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+button{font-family:'Inter',sans-serif;}
+input,select{font-family:'Inter',sans-serif;}
+
+/* ================= AUTH ================= */
+#authScreen{min-height:100vh; display:flex;}
+.auth-brand{
+  flex:1.1; background:linear-gradient(160deg,#1B0F3E 0%, #3D1F94 55%, #6C3CE9 100%);
+  color:#fff; display:flex; flex-direction:column; justify-content:space-between; padding:48px;
+  position:relative; overflow:hidden;
+}
+.auth-brand .top{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk'; font-weight:700; font-size:19px; z-index:1;}
+.auth-brand .top .mark{width:30px; height:30px; border-radius:8px; background:var(--lime); color:#1B0F3E; display:flex; align-items:center; justify-content:center; font-weight:700;}
+.auth-brand .pitch{max-width:380px; z-index:1;}
+.auth-brand .pitch h2{font-size:30px; color:#fff; line-height:1.2; margin-bottom:12px;}
+.auth-brand .pitch p{color:#D9CDFB; font-size:14.5px; line-height:1.6;}
+.auth-brand .gaugewrap{position:absolute; right:-60px; bottom:-60px; opacity:.9;}
+.auth-brand .stats{display:flex; gap:26px; z-index:1;}
+.auth-brand .stats .s .n{font-family:'Space Grotesk'; font-size:20px; font-weight:700; color:var(--lime);}
+.auth-brand .stats .s .l{font-size:11.5px; color:#C9BCF2;}
+
+.auth-form-wrap{flex:1; display:flex; align-items:center; justify-content:center; padding:40px; background:var(--bg);}
+.auth-form{width:100%; max-width:360px;}
+.auth-tabs{display:flex; gap:4px; background:var(--panel-raised); border:1px solid var(--line); border-radius:10px; padding:4px; margin-bottom:26px;}
+.auth-tabs button{flex:1; padding:9px 0; border:none; background:transparent; border-radius:7px; font-size:13.5px; font-weight:500; color:var(--ink-soft); cursor:pointer;}
+.auth-tabs button.active{background:var(--accent); color:#fff;}
+.auth-form label{font-size:12.5px; color:var(--ink-soft); display:block; margin:14px 0 5px;}
+.auth-form input, .auth-form select{
+  width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:9px; font-size:13.5px;
+  background:var(--panel); color:var(--ink);
+}
+.auth-form input:focus, .auth-form select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-tint);}
+.role-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px;}
+.role-opt{border:1px solid var(--line); border-radius:9px; padding:10px 6px; text-align:center; cursor:pointer; font-size:12px; font-weight:500; color:var(--ink-soft);}
+.role-opt.sel{border-color:var(--accent); background:var(--accent-tint); color:var(--accent-ink);}
+.authbtn{
+  width:100%; margin-top:20px; padding:12px 0; border:none; border-radius:9px; background:var(--accent); color:#fff;
+  font-weight:600; font-size:14px; cursor:pointer;
+}
+.authbtn:hover{opacity:.92;}
+.authfoot{margin-top:14px; font-size:12.5px; color:var(--ink-faint); text-align:center;}
+.demolink{color:var(--accent); cursor:pointer; font-weight:500;}
+.errline{color:var(--coral); font-size:12px; margin-top:6px; display:none;}
+
+/* ================= APP SHELL ================= */
+#appShell{display:none; min-height:100vh;}
+.shell-flex{display:flex; min-height:100vh;}
+.sidebar{
+  width:220px; flex-shrink:0; background:#150F2A; color:#EDEBFA; display:flex; flex-direction:column; padding:20px 14px;
+}
+[data-theme="dark"] .sidebar{background:#0A0713;}
+.sidebar .brand{display:flex; align-items:center; gap:9px; font-family:'Space Grotesk'; font-weight:700; font-size:16px; padding:0 8px 22px;}
+.sidebar .brand .mark{width:26px; height:26px; border-radius:7px; background:var(--lime); color:#150F2A; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;}
+.sidebar nav{display:flex; flex-direction:column; gap:3px;}
+.sidebar nav button{
+  display:flex; align-items:center; gap:10px; background:transparent; border:none; color:#B8AEDD; text-align:left;
+  padding:10px 12px; border-radius:8px; font-size:13.5px; cursor:pointer; font-weight:500; border-left:3px solid transparent;
+}
+.sidebar nav button svg{flex-shrink:0;}
+.sidebar nav button:hover{background:rgba(255,255,255,.06);}
+.sidebar nav button.active{background:rgba(140,103,245,.22); color:#fff; border-left-color:var(--lime);}
+.sidebar .spacer{flex:1;}
+.sidebar .userchip{display:flex; align-items:center; gap:9px; padding:10px 8px; border-top:1px solid rgba(255,255,255,.1); margin-top:10px;}
+.sidebar .userchip .av{width:30px; height:30px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff;}
+.sidebar .userchip .name{font-size:12.5px; font-weight:600;}
+.sidebar .userchip .role{font-size:11px; color:#9C90C4;}
+.sidebar .logout{background:transparent; border:none; color:#9C90C4; cursor:pointer; margin-left:auto; font-size:16px;}
+
+.main{flex:1; display:flex; flex-direction:column; min-width:0;}
+.topbar{display:flex; align-items:center; gap:14px; padding:16px 26px; border-bottom:1px solid var(--line);}
+.topbar h1{font-size:18px;}
+.themeToggle{
+  margin-left:auto; display:flex; align-items:center; gap:6px; background:var(--panel-raised); border:1px solid var(--line);
+  border-radius:20px; padding:4px; cursor:pointer;
+}
+.themeToggle .opt{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--ink-faint);}
+.themeToggle .opt.sel{background:var(--accent); color:#fff;}
+
+.view{display:none; padding:22px 26px 44px; max-width:1180px;}
+.view.active{display:block;}
+
+/* ================= DASHBOARD ================= */
+.dash-head{margin-bottom:20px;}
+.dash-head p{color:var(--ink-soft); font-size:13.5px; margin-top:4px;}
+.tile-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px;}
+.tile{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; cursor:pointer; box-shadow:var(--shadow); text-align:left; transition:transform .12s ease, border-color .12s ease;}
+.tile:hover{transform:translateY(-2px); border-color:var(--accent);}
+.tile .tile-icon{width:42px; height:42px; border-radius:11px; background:var(--accent-tint); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
+.tile h3{font-size:15.5px; margin-bottom:5px;}
+.tile p{font-size:12.5px; color:var(--ink-soft); line-height:1.55; margin:0;}
+.tile .tile-go{margin-top:14px; font-size:11.5px; font-weight:600; color:var(--accent-ink); display:flex; align-items:center; gap:4px;}
+
+/* ================= SHARED COMPONENTS ================= */
+.scanbar{display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px; margin-bottom:16px; box-shadow:var(--shadow);}
+.scanbar input{flex:1; border:none; outline:none; font-size:14px; background:transparent; color:var(--ink);}
+.scanbar .branchtag{font-size:12px; color:var(--ink-soft);}
+
+.pos-grid{display:grid; grid-template-columns:1.6fr 1fr; gap:18px; align-items:start;}
+.cats{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;}
+.cats span{font-size:12.5px; padding:6px 13px; border-radius:20px; border:1px solid var(--line); cursor:pointer; background:var(--panel); font-weight:500;}
+.cats span.active{background:var(--ink); color:var(--bg); border-color:var(--ink);}
+
+.product-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:13px; position:relative; box-shadow:var(--shadow);}
+.card img.thumb{width:100%; height:88px; object-fit:cover; border-radius:9px; margin-bottom:6px; display:block; background:var(--bg);}
+.thumb-placeholder{width:100%; height:88px; border-radius:9px; margin-bottom:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:var(--panel-raised); border:1.5px dashed var(--line); color:var(--ink-faint);}
+.thumb-placeholder span{font-size:10px; font-weight:500;}
+.stockbadge{position:absolute; top:10px; right:10px; font-size:10.5px; padding:2px 8px; border-radius:20px; font-weight:600;}
+.stockbadge.ok{background:var(--lime-tint); color:var(--lime-ink);}
+.stockbadge.low{background:var(--coral-tint); color:var(--coral-ink);}
+.card p.name{font-weight:600; font-size:14px; margin:8px 0 2px;}
+.card p.sku{font-size:11.5px; color:var(--ink-faint); margin:0 0 10px;}
+.card .row{display:flex; justify-content:space-between; align-items:center;}
+.card .price{font-weight:600; font-size:15px;}
+.addbtn{width:30px; height:30px; border-radius:9px; border:1px solid var(--line); background:var(--panel); cursor:pointer; font-size:16px; color:var(--accent); font-weight:600;}
+.addbtn:hover{background:var(--accent); color:#fff; border-color:var(--accent);}
+
+.cart{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow);}
+.cart h3{font-size:14px; display:flex; align-items:center; justify-content:space-between;}
+.cart-items{margin:10px 0; display:flex; flex-direction:column; gap:7px; min-height:30px;}
+.cart-items .empty{color:var(--ink-faint); font-size:13px; padding:10px 0;}
+.line{display:flex; justify-content:space-between; align-items:center; font-size:13px; gap:8px;}
+.line .linfo{display:flex; align-items:center; gap:8px; min-width:0;}
+.line .linfo img, .line .linfo .ph{width:26px; height:26px; border-radius:6px; object-fit:cover; flex-shrink:0; background:var(--panel-raised); border:1px solid var(--line);}
+.line .linfo .txt{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.line .rm{cursor:pointer; color:var(--ink-faint); font-size:12px; margin-left:6px;}
+.line .rm:hover{color:var(--coral);}
+.perf{height:1px; margin:12px -16px; background:repeating-linear-gradient(to right, var(--line) 0 6px, transparent 6px 12px);}
+.totals div{display:flex; justify-content:space-between; font-size:13px; color:var(--ink-soft); margin:3px 0;}
+.totals .grand{font-size:17px; font-weight:600; color:var(--ink); margin-top:6px;}
+.paymethods{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0;}
+.paymethods button{padding:9px 0; border-radius:9px; border:1px solid var(--line); background:var(--panel); font-size:12px; font-weight:500; cursor:pointer; color:var(--ink);}
+.paymethods button.sel{background:var(--accent-tint); border-color:var(--accent); color:var(--accent-ink);}
+.completebtn{width:100%; padding:12px 0; border:none; border-radius:9px; background:var(--lime); color:#1C2A00; font-size:14px; font-weight:700; cursor:pointer;}
+.completebtn:disabled{background:var(--line); color:var(--ink-faint); cursor:not-allowed;}
+
+.ops-top{display:flex; gap:14px; margin-bottom:18px;}
+.shiftcard{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; flex:1; display:flex; align-items:center; gap:14px; box-shadow:var(--shadow);}
+.dot{width:9px; height:9px; border-radius:50%; background:var(--lime); flex-shrink:0;}
+.dot.idle{background:var(--ink-faint);}
+.shiftcard .who{font-weight:600; font-size:14px;}
+.shiftcard .since{font-size:12px; color:var(--ink-soft);}
+.shiftcard .cash{margin-left:auto; text-align:right;}
+.shiftcard .cash .n{font-weight:600; font-size:15px;}
+.shiftcard .cash .l{font-size:10.5px; color:var(--ink-faint); text-transform:uppercase;}
+.shiftcard button{background:var(--ink); color:var(--bg); border:none; padding:8px 14px; border-radius:8px; font-size:12.5px; cursor:pointer;}
+.shiftcard button.clockedout{background:var(--lime); color:#1C2A00;}
+
+.ops-section{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:16px; box-shadow:var(--shadow);}
+.ops-section-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+.ops-section-head h3{font-size:14px;}
+.ops-section-head button{background:var(--ink); color:var(--bg); border:none; padding:7px 13px; border-radius:8px; font-size:12px; cursor:pointer;}
+table.invt{width:100%; border-collapse:collapse; font-size:13px;}
+table.invt th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.3px; color:var(--ink-faint); padding:6px 8px; border-bottom:1px solid var(--line);}
+table.invt td{padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+table.invt tr:last-child td{border-bottom:none;}
+.invt-status{font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600;}
+.invt-status.ok{background:var(--lime-tint); color:var(--lime-ink);}
+.invt-status.low{background:var(--coral-tint); color:var(--coral-ink);}
+.invt-thumb{width:34px; height:34px; object-fit:cover; border-radius:8px; vertical-align:middle; background:var(--bg); display:block;}
+.invt-thumb-add{width:34px; height:34px; border-radius:8px; border:1.5px dashed var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-faint); font-size:16px; font-weight:600; position:relative; overflow:hidden; background:var(--panel-raised);}
+.invt-thumb-add:hover{border-color:var(--accent); color:var(--accent);}
+.invt-thumb-add input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+.restockbtn{background:transparent; border:1px solid var(--line); padding:5px 11px; border-radius:7px; font-size:11.5px; cursor:pointer; color:var(--ink);}
+.restockbtn:hover{border-color:var(--accent); color:var(--accent);}
+
+.po-row{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:13px;}
+.po-row:last-child{border-bottom:none;}
+.po-status{font-size:11px; padding:2px 9px; border-radius:20px; font-weight:600; margin-left:auto;}
+.po-status.ordered{background:var(--accent-tint); color:var(--accent-ink);}
+.po-status.received{background:var(--lime-tint); color:var(--lime-ink);}
+.po-recv{background:var(--ink); color:var(--bg); border:none; padding:6px 12px; border-radius:7px; font-size:11.5px; cursor:pointer;}
+
+.ownerhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
+.addbranchbtn{background:var(--accent); color:#fff; border:none; padding:10px 18px; border-radius:9px; font-weight:600; cursor:pointer; font-size:13px;}
+.ghostbtn{background:var(--panel); color:var(--ink); border:1px solid var(--line); padding:10px 18px; border-radius:9px; font-weight:500; cursor:pointer; font-size:13px;}
+
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;}
+.kpi{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow);}
+.kpi .txt .label{font-size:12px; color:var(--ink-soft);}
+.kpi .txt .val{font-size:20px; font-weight:600; margin-top:2px; font-family:'Space Grotesk';}
+
+.branch{background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow);}
+.branch-top{display:flex; align-items:center; padding:14px 16px; cursor:pointer; gap:12px;}
+.branch-name{font-weight:600; font-size:15px;}
+.branch-loc{font-size:12px; color:var(--ink-soft);}
+.branch-stats{display:flex; gap:22px; margin-left:auto; text-align:right;}
+.branch-stats .stat .n{font-weight:600; font-size:14px; font-family:'Space Grotesk';}
+.branch-stats .stat .l{font-size:10.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.4px;}
+.chev{color:var(--ink-faint); transition:.15s;}
+.branch.open .chev{transform:rotate(90deg);}
+.branch-body{display:none; padding:0 16px 16px; border-top:1px solid var(--line);}
+.branch.open .branch-body{display:block;}
+.staff-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
+.staff-row:last-child{border-bottom:none;}
+.avatar{width:28px; height:28px; border-radius:50%; background:var(--accent-tint); color:var(--accent-ink); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:600;}
+.staff-role{font-size:11px; padding:2px 8px; border-radius:20px; background:var(--bg); color:var(--ink-soft); margin-left:auto;}
+.staff-status{font-size:11px; margin-left:8px;}
+.staff-status.on{color:var(--lime-ink);}
+.staff-status.off{color:var(--ink-faint);}
+.addstaffbar{display:flex; gap:8px; margin-top:12px;}
+.addstaffbar input, .addstaffbar select{padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:12.5px; background:var(--panel); color:var(--ink);}
+.addstaffbar input{flex:1;}
+.addstaffbar button{background:var(--ink); color:var(--bg); border:none; padding:8px 14px; border-radius:8px; font-size:12.5px; cursor:pointer;}
+
+.modal-backdrop{position:fixed; inset:0; background:rgba(10,5,25,.5); display:none; align-items:center; justify-content:center; z-index:50;}
+.modal-backdrop.show{display:flex;}
+.modal{background:var(--panel); border-radius:16px; padding:22px; width:340px; border:1px solid var(--line);}
+.modal h3{margin-bottom:14px;}
+.modal label{font-size:12px; color:var(--ink-soft); display:block; margin:10px 0 4px;}
+.modal input, .modal select{width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px; background:var(--panel); color:var(--ink);}
+.modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
+.modal-actions button{padding:9px 16px; border-radius:8px; border:1px solid var(--line); background:var(--panel); cursor:pointer; font-size:13px; color:var(--ink);}
+.modal-actions .primary{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600;}
+.imgpicker{border:1.5px dashed var(--line); border-radius:9px; padding:14px; text-align:center; cursor:pointer; font-size:12.5px; color:var(--ink-soft); position:relative; overflow:hidden;}
+.imgpicker:hover{border-color:var(--accent);}
+.imgpicker img{max-width:100%; max-height:90px; border-radius:7px; display:block; margin:0 auto;}
+.imgpicker input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- ===================== AUTH ===================== -->
+<div id="authScreen">
+  <div class="auth-brand">
+    <div class="top"><span class="mark">T</span>Torque</div>
+    <div class="pitch">
+      <h2>Run every branch of your parts business from one screen.</h2>
+      <p>Checkout, inventory, and remote branch monitoring for auto parts dealerships — built for how the shop floor actually works.</p>
+    </div>
+    <div class="gaugewrap" id="brandGauge"></div>
+    <div class="stats">
+      <div class="s"><div class="n">3</div><div class="l">branches live</div></div>
+      <div class="s"><div class="n">GHS 12.9k</div><div class="l">sales today</div></div>
+      <div class="s"><div class="n">99.9%</div><div class="l">uptime</div></div>
+    </div>
+  </div>
+
+  <div class="auth-form-wrap">
+    <div class="auth-form">
+      <div class="auth-tabs">
+        <button class="active" id="tabLogin" onclick="setAuthTab('login')">Sign in</button>
+        <button id="tabSignup" onclick="setAuthTab('signup')">Create account</button>
+      </div>
+
+      <div id="loginForm">
+        <label>Work email</label>
+        <input id="loginEmail" placeholder="you@dealership.com">
+        <label>Password</label>
+        <input id="loginPassword" type="password" placeholder="••••••••">
+        <div class="errline" id="loginErr">Enter your email and password.</div>
+        <button class="authbtn" onclick="doLogin()">Sign in</button>
+        <div class="authfoot">Demo login always signs you in as the business owner.</div>
+      </div>
+
+      <div id="signupForm" style="display:none;">
+        <label>You are joining as</label>
+        <div class="role-grid">
+          <div class="role-opt sel" data-role="Owner" onclick="pickRole(this)">Owner</div>
+          <div class="role-opt" data-role="Manager" onclick="pickRole(this)">Manager</div>
+          <div class="role-opt" data-role="Cashier" onclick="pickRole(this)">Cashier</div>
+        </div>
+        <label id="orgLabel">Dealership name</label>
+        <input id="signupOrg" placeholder="e.g. Asante Auto Parts">
+        <label>Full name</label>
+        <input id="signupName" placeholder="e.g. Efua Asante">
+        <label>Work email</label>
+        <input id="signupEmail" placeholder="you@dealership.com">
+        <label>Password</label>
+        <input id="signupPassword" type="password" placeholder="Create a password">
+        <div class="errline" id="signupErr">Fill in all fields to continue.</div>
+        <button class="authbtn" onclick="doSignup()">Create account</button>
+        <div class="authfoot">By continuing you agree to Torque's terms and privacy policy.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP SHELL ===================== -->
+<div id="appShell">
+  <div class="shell-flex">
+    <div class="sidebar">
+      <div class="brand"><span class="mark">T</span>Torque</div>
+      <nav id="sideNav"></nav>
+      <div class="spacer"></div>
+      <div class="userchip">
+        <div class="av" id="userAvatar">EA</div>
+        <div>
+          <div class="name" id="userName">Efua Asante</div>
+          <div class="role" id="userRole">Owner</div>
+        </div>
+        <button class="logout" title="Log out" onclick="doLogout()">⏻</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="topbar">
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="themeToggle" onclick="toggleTheme()">
+          <div class="opt sel" id="lightOpt">☀</div>
+          <div class="opt" id="darkOpt">☾</div>
+        </div>
+      </div>
+
+      <!-- ===== DASHBOARD ===== -->
+      <div id="dashboard" class="view active">
+        <div class="dash-head">
+          <h2>Welcome back, <span id="dashName">there</span></h2>
+          <p>Pick where you want to go.</p>
+        </div>
+        <div class="tile-grid" id="tileGrid"></div>
+      </div>
+
+      <!-- ===== POS ===== -->
+      <div id="pos" class="view">
+        <div class="scanbar">
+          <span class="mono" style="color:var(--ink-faint)">⌕</span>
+          <input id="search" placeholder="Scan barcode or search part name, SKU...">
+          <span class="branchtag">Kumasi Main</span>
+        </div>
+        <div class="pos-grid">
+          <div>
+            <div class="cats" id="cats"></div>
+            <div class="product-grid" id="productGrid"></div>
+          </div>
+          <div class="cart">
+            <h3>Current sale <span class="mono" id="itemCount" style="font-size:11.5px; color:var(--ink-faint); font-weight:400;">0 items</span></h3>
+            <div class="cart-items" id="cartItems"><div class="empty">Tap a part to add it to the sale.</div></div>
+            <div class="perf"></div>
+            <div class="totals">
+              <div><span>Subtotal</span><span id="tSub">GHS 0.00</span></div>
+              <div><span>VAT (15%)</span><span id="tVat">GHS 0.00</span></div>
+              <div class="grand"><span>Total</span><span id="tTotal">GHS 0.00</span></div>
+            </div>
+            <div class="paymethods" id="payMethods">
+              <button data-m="Cash">Cash</button>
+              <button data-m="Card">Card</button>
+              <button data-m="MoMo">MoMo</button>
+              <button data-m="Transfer">Transfer</button>
+            </div>
+            <button class="completebtn" id="completeBtn" disabled>Add items to continue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== OPS ===== -->
+      <div id="ops" class="view">
+        <div class="ops-top">
+          <div class="shiftcard">
+            <span class="dot" id="shiftDot"></span>
+            <div>
+              <div class="who" id="opsWho">Efua Asante · Manager</div>
+              <div class="since" id="shiftSince">Clocked in at 8:02 AM</div>
+            </div>
+            <div class="cash"><div class="n">GHS 300.00</div><div class="l">Opening float</div></div>
+            <button id="clockBtn" onclick="toggleClock()">Clock out</button>
+          </div>
+        </div>
+        <div class="ops-section">
+          <div class="ops-section-head">
+            <h3>Branch inventory — Kumasi Main</h3>
+            <button onclick="openItemModal()">+ Add item</button>
+          </div>
+          <p style="font-size:12px; color:var(--ink-soft); margin:-4px 0 12px;">Tap the dashed box next to any part without a photo to add one.</p>
+          <table class="invt">
+            <thead><tr><th>Photo</th><th>Part</th><th class="mono">SKU</th><th>In stock</th><th>Reorder at</th><th>Status</th><th></th></tr></thead>
+            <tbody id="invtBody"></tbody>
+          </table>
+        </div>
+        <div class="ops-section">
+          <div class="ops-section-head">
+            <h3>Purchase orders</h3>
+            <button onclick="openPOModal()">+ New purchase order</button>
+          </div>
+          <div id="poList"></div>
+        </div>
+      </div>
+
+      <!-- ===== OWNER ===== -->
+      <div id="owner" class="view">
+        <div class="ownerhead">
+          <h2>Branches</h2>
+          <div style="display:flex; gap:8px;">
+            <button class="ghostbtn" onclick="openItemModal()">+ Add item</button>
+            <button class="addbranchbtn" onclick="openBranchModal()">+ Add branch</button>
+          </div>
+        </div>
+        <div class="kpis" id="kpiRow"></div>
+        <div id="branchList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+<div class="modal-backdrop" id="restockModal">
+  <div class="modal">
+    <h3>Restock item</h3>
+    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 6px" id="restockName"></p>
+    <label>Quantity received</label>
+    <input type="number" id="restockQty" min="1" value="10">
+    <div class="modal-actions">
+      <button onclick="closeRestockModal()">Cancel</button>
+      <button class="primary" onclick="confirmRestock()">Add to stock</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="poModal">
+  <div class="modal">
+    <h3>New purchase order</h3>
+    <label>Supplier</label>
+    <select id="poSupplier">
+      <option>Accra Auto Parts Distributors</option>
+      <option>Tema Motor Spares Ltd</option>
+      <option>Kumasi Battery Wholesale</option>
+    </select>
+    <label>Part</label>
+    <select id="poPart"></select>
+    <label>Quantity</label>
+    <input type="number" id="poQty" min="1" value="20">
+    <div class="modal-actions">
+      <button onclick="closePOModal()">Cancel</button>
+      <button class="primary" onclick="createPO()">Send order</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="itemModal">
+  <div class="modal">
+    <h3>Add a new part</h3>
+    <label>Photo</label>
+    <div class="imgpicker" id="imgPicker">
+      <span id="imgPickerText">Click to upload a photo (or add it later)</span>
+      <input type="file" accept="image/*" id="itemImage" onchange="previewItemImage(this)">
+    </div>
+    <label>Part name</label>
+    <input id="itemName" placeholder="e.g. Radiator fan">
+    <label>SKU</label>
+    <input id="itemSku" placeholder="e.g. RF-8834">
+    <label>Fits / note</label>
+    <input id="itemNote" placeholder="e.g. Honda Civic 12-16">
+    <label>Price (GHS)</label>
+    <input type="number" id="itemPrice" min="0" value="50">
+    <label>Starting stock</label>
+    <input type="number" id="itemStock" min="0" value="10">
+    <div class="modal-actions">
+      <button onclick="closeItemModal()">Cancel</button>
+      <button class="primary" onclick="createItem()">Add to catalog</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="branchModal">
+  <div class="modal">
+    <h3>Add a new branch</h3>
+    <label>Branch name</label>
+    <input id="mBranchName" placeholder="e.g. Takoradi Branch">
+    <label>Location</label>
+    <input id="mBranchLoc" placeholder="e.g. Takoradi, Western Region">
+    <div class="modal-actions">
+      <button onclick="closeBranchModal()">Cancel</button>
+      <button class="primary" onclick="createBranch()">Create branch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= GAUGE (signature element) ================= */
+function gaugeSVG(pct, size, trackColor, fillColor, labelColor, label, sub){
+  const r = size/2 - 10, c = 2*Math.PI*r, off = c*(1-pct/100);
+  const cx = size/2, cy = size/2;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${trackColor}" stroke-width="9"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${fillColor}" stroke-width="9"
+      stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"
+      transform="rotate(-90 ${cx} ${cy})"/>
+    <text x="${cx}" y="${cy-2}" text-anchor="middle" font-family="Space Grotesk" font-weight="700" font-size="${size*0.22}" fill="${labelColor}">${label}</text>
+    <text x="${cx}" y="${cy+size*0.16}" text-anchor="middle" font-family="Inter" font-size="${size*0.075}" fill="${labelColor}" opacity=".7">${sub}</text>
+  </svg>`;
+}
+document.getElementById('brandGauge').innerHTML = gaugeSVG(78,170,'rgba(255,255,255,.15)','#C6FF3D','#fff','78%','stock health');
+
+/* ================= AUTH ================= */
+/* The app boots on #authScreen (#appShell stays display:none) — nothing about
+   the workspace is reachable until doLogin()/doSignup() explicitly calls enterApp(). */
+let currentUser = {name:'Efua Asante', role:'Owner'};
+function setAuthTab(t){
+  document.getElementById('tabLogin').classList.toggle('active', t==='login');
+  document.getElementById('tabSignup').classList.toggle('active', t==='signup');
+  document.getElementById('loginForm').style.display = t==='login' ? 'block':'none';
+  document.getElementById('signupForm').style.display = t==='signup' ? 'block':'none';
+}
+let signupRole = 'Owner';
+function pickRole(el){
+  document.querySelectorAll('.role-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  signupRole = el.dataset.role;
+  document.getElementById('orgLabel').textContent = signupRole==='Owner' ? 'Dealership name' : 'Invite code';
+  document.getElementById('signupOrg').placeholder = signupRole==='Owner' ? 'e.g. Asante Auto Parts' : 'e.g. KUMASI-7F2A';
+}
+function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value.trim();
+  if(!email || !pw){ document.getElementById('loginErr').style.display='block'; return; }
+  document.getElementById('loginErr').style.display='none';
+  currentUser = {name:'Efua Asante', role:'Owner'};
+  enterApp();
+}
+function doSignup(){
+  const org = document.getElementById('signupOrg').value.trim();
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const pw = document.getElementById('signupPassword').value.trim();
+  if(!org || !name || !email || !pw){ document.getElementById('signupErr').style.display='block'; return; }
+  document.getElementById('signupErr').style.display='none';
+  currentUser = {name, role:signupRole};
+  enterApp();
+}
+function initials(n){ return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+function enterApp(){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appShell').style.display='block';
+  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('userRole').textContent = currentUser.role;
+  document.getElementById('userAvatar').textContent = initials(currentUser.name);
+  document.getElementById('dashName').textContent = currentUser.name.split(' ')[0];
+  buildNav();
+}
+function doLogout(){
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+}
+
+/* role-based nav — Dashboard is available to every role and is always first */
+const navIcons = {
+  dashboard: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+  pos: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h2l2.6 12.6a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L21 7H6"/></svg>',
+  ops: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  owner: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M10 21v-6h4v6"/></svg>'
+};
+const navDefs = [
+  {id:'dashboard', label:'Dashboard', roles:['Owner','Manager','Cashier'], blurb:'Your starting point — jump to any part of the shop from here.'},
+  {id:'pos', label:'Checkout', roles:['Owner','Manager','Cashier'], blurb:'Ring up sales, scan parts and take payment.'},
+  {id:'ops', label:'Shop operations', roles:['Owner','Manager'], blurb:'Manage this branch\'s inventory, restocks and purchase orders.'},
+  {id:'owner', label:'Owner dashboard', roles:['Owner'], blurb:'See every branch, staffing and sales at a glance.'},
+];
+function buildNav(){
+  const nav = document.getElementById('sideNav');
+  const items = navDefs.filter(n=>n.roles.includes(currentUser.role));
+  nav.innerHTML = items.map((n,i)=>`<button class="${i===0?'active':''}" onclick="showView('${n.id}', this)">${navIcons[n.id]}${n.label}</button>`).join('');
+  renderDashboardTiles(items);
+  showView(items[0].id, nav.children[0]);
+}
+function renderDashboardTiles(items){
+  const tiles = items.filter(n=>n.id!=='dashboard');
+  document.getElementById('tileGrid').innerHTML = tiles.map(n=>`
+    <button class="tile" onclick="goTo('${n.id}')">
+      <div class="tile-icon">${navIcons[n.id]}</div>
+      <h3>${n.label}</h3>
+      <p>${n.blurb}</p>
+      <div class="tile-go">Open →</div>
+    </button>
+  `).join('');
+}
+function goTo(id){
+  const btn = Array.from(document.querySelectorAll('.sidebar nav button')).find(b=>b.textContent.trim()===navDefs.find(n=>n.id===id).label);
+  showView(id, btn);
+}
+function showView(id, btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.sidebar nav button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const titles = {dashboard:'Dashboard', pos:'Checkout', ops:'Shop operations', owner:'Owner dashboard'};
+  document.getElementById('pageTitle').textContent = titles[id];
+}
+
+/* ================= THEME ================= */
+function toggleTheme(){
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', dark ? 'light':'dark');
+  document.getElementById('lightOpt').classList.toggle('sel', dark);
+  document.getElementById('darkOpt').classList.toggle('sel', !dark);
+}
+
+/* ================= CATALOG (photos: owner/manager add these from Shop operations) ================= */
+const products = [
+  {name:'Brake pad set, front', sku:'BP-4471', note:'Toyota Corolla 10-15', price:185, stock:42, image:null},
+  {name:'Oil filter', sku:'OF-1029', note:'Universal', price:45, stock:6, image:null},
+  {name:'Car battery 12V 65Ah', sku:'BT-6520', note:'Serial tracked', price:780, stock:18, image:null},
+  {name:'Shock absorber, rear', sku:'SA-3312', note:'Hyundai Elantra', price:320, stock:27, image:null},
+  {name:'Spark plug (set of 4)', sku:'SP-2201', note:'Universal petrol', price:96, stock:33, image:null},
+  {name:'Air filter', sku:'AF-1187', note:'Nissan Almera', price:38, stock:5, image:null},
+];
+let cart = [];
+let selectedMethod = null;
+
+function productThumb(p, size){
+  return p.image
+    ? `<img class="thumb" src="${p.image}" style="height:${size}px">`
+    : `<div class="thumb-placeholder" style="height:${size}px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-4.5-4.5a1.5 1.5 0 0 0-2 0L9 17"/></svg><span>Photo coming soon</span></div>`;
+}
+function renderProducts(){
+  document.getElementById('productGrid').innerHTML = products.map((p,i)=>`
+    <div class="card">
+      <span class="stockbadge ${p.stock<10?'low':'ok'}">${p.stock<10?p.stock+' left':p.stock+' in stock'}</span>
+      ${productThumb(p, 88)}
+      <p class="name">${p.name}</p>
+      <p class="sku mono">SKU ${p.sku} · ${p.note}</p>
+      <div class="row"><span class="price">GHS ${p.price.toFixed(2)}</span><button class="addbtn" onclick="addToCart(${i})">+</button></div>
+    </div>
+  `).join('');
+}
+document.getElementById('cats').innerHTML = ['All parts','Brakes','Filters','Batteries','Suspension'].map((c,i)=>`<span class="${i===0?'active':''}">${c}</span>`).join('');
+
+function addToCart(i){
+  const p = products[i];
+  const existing = cart.find(c=>c.sku===p.sku);
+  if(existing) existing.qty++; else cart.push({...p, qty:1});
+  renderCart();
+}
+function removeFromCart(sku){ cart = cart.filter(c=>c.sku!==sku); renderCart(); }
+function renderCart(){
+  const wrap = document.getElementById('cartItems');
+  document.getElementById('itemCount').textContent = cart.reduce((a,c)=>a+c.qty,0) + ' items';
+  wrap.innerHTML = cart.length===0 ? '<div class="empty">Tap a part to add it to the sale.</div>' :
+    cart.map(c=>`<div class="line">
+        <span class="linfo">${c.image?`<img src="${c.image}">`:`<span class="ph"></span>`}<span class="txt">${c.name} × ${c.qty}</span></span>
+        <span>GHS ${(c.price*c.qty).toFixed(2)} <span class="rm" onclick="removeFromCart('${c.sku}')">✕</span></span>
+      </div>`).join('');
+  const sub = cart.reduce((a,c)=>a+c.price*c.qty,0), vat = sub*0.15;
+  document.getElementById('tSub').textContent = 'GHS '+sub.toFixed(2);
+  document.getElementById('tVat').textContent = 'GHS '+vat.toFixed(2);
+  document.getElementById('tTotal').textContent = 'GHS '+(sub+vat).toFixed(2);
+  updateCompleteBtn();
+}
+function updateCompleteBtn(){
+  const btn = document.getElementById('completeBtn');
+  if(cart.length===0){ btn.disabled=true; btn.textContent='Add items to continue'; return; }
+  if(!selectedMethod){ btn.disabled=true; btn.textContent='Choose a payment method'; return; }
+  btn.disabled=false; btn.textContent = 'Complete sale · ' + document.getElementById('tTotal').textContent;
+}
+document.getElementById('payMethods').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#payMethods button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel'); selectedMethod = b.dataset.m; updateCompleteBtn();
+});
+document.getElementById('completeBtn').addEventListener('click', ()=>{
+  if(document.getElementById('completeBtn').disabled) return;
+  alert('Sale completed via '+selectedMethod+'. Receipt sent and stock deducted.');
+  cart = []; selectedMethod = null;
+  document.querySelectorAll('#payMethods button').forEach(x=>x.classList.remove('sel'));
+  renderCart();
+});
+renderProducts(); renderCart();
+
+/* ================= OPS ================= */
+let clockedIn = true;
+function toggleClock(){
+  clockedIn = !clockedIn;
+  document.getElementById('shiftDot').className = 'dot' + (clockedIn?'':' idle');
+  document.getElementById('shiftSince').textContent = clockedIn ? 'Clocked in at 8:02 AM' : 'Clocked out at ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  const btn = document.getElementById('clockBtn');
+  btn.textContent = clockedIn ? 'Clock out' : 'Clock in';
+  btn.classList.toggle('clockedout', !clockedIn);
+}
+function invtThumbCell(p, i){
+  return p.image
+    ? `<img class="invt-thumb" src="${p.image}" title="Click in the catalog to replace">`
+    : `<label class="invt-thumb-add" title="Add a photo for ${p.name.replace(/"/g,'&quot;')}">+
+         <input type="file" accept="image/*" onchange="setProductImage(${i}, this)">
+       </label>`;
+}
+function renderInventoryTable(){
+  document.getElementById('invtBody').innerHTML = products.map((p,i)=>{
+    const low = p.stock < 10;
+    return `<tr><td>${invtThumbCell(p,i)}</td><td>${p.name}</td><td class="mono">${p.sku}</td><td>${p.stock}</td><td>10</td>
+      <td><span class="invt-status ${low?'low':'ok'}">${low?'Low stock':'Healthy'}</span></td>
+      <td><button class="restockbtn" onclick="openRestockModal(${i})">Restock</button></td></tr>`;
+  }).join('');
+}
+function setProductImage(i, input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    products[i].image = e.target.result;
+    renderInventoryTable(); renderProducts();
+  };
+  reader.readAsDataURL(file);
+}
+renderInventoryTable();
+let restockIndex = null;
+function openRestockModal(i){ restockIndex=i; document.getElementById('restockName').textContent = products[i].name+' (SKU '+products[i].sku+')'; document.getElementById('restockModal').classList.add('show'); }
+function closeRestockModal(){ document.getElementById('restockModal').classList.remove('show'); }
+function confirmRestock(){
+  const qty = parseInt(document.getElementById('restockQty').value) || 0;
+  if(qty<=0) return;
+  products[restockIndex].stock += qty;
+  closeRestockModal(); renderInventoryTable(); renderProducts();
+}
+let purchaseOrders = [
+  {supplier:'Accra Auto Parts Distributors', part:'Oil filter', qty:50, status:'ordered'},
+  {supplier:'Kumasi Battery Wholesale', part:'Car battery 12V 65Ah', qty:15, status:'received'},
+];
+function renderPOs(){
+  document.getElementById('poList').innerHTML = purchaseOrders.map((po,i)=>`
+    <div class="po-row"><span><strong>${po.part}</strong> × ${po.qty}</span><span style="color:var(--ink-soft)">${po.supplier}</span>
+    <span class="po-status ${po.status}">${po.status==='ordered'?'Awaiting delivery':'Received'}</span>
+    ${po.status==='ordered'?`<button class="po-recv" onclick="receivePO(${i})">Mark received</button>`:''}</div>`).join('');
+}
+renderPOs();
+function receivePO(i){
+  const po = purchaseOrders[i]; po.status='received';
+  const prod = products.find(p=>p.name===po.part); if(prod) prod.stock += po.qty;
+  renderPOs(); renderInventoryTable(); renderProducts();
+}
+function openPOModal(){ document.getElementById('poPart').innerHTML = products.map(p=>`<option>${p.name}</option>`).join(''); document.getElementById('poModal').classList.add('show'); }
+function closePOModal(){ document.getElementById('poModal').classList.remove('show'); }
+function createPO(){
+  const supplier = document.getElementById('poSupplier').value, part = document.getElementById('poPart').value;
+  const qty = parseInt(document.getElementById('poQty').value) || 0;
+  if(qty<=0) return;
+  purchaseOrders.unshift({supplier, part, qty, status:'ordered'});
+  closePOModal(); renderPOs();
+}
+
+/* ================= ADD ITEM ================= */
+let pendingImage = null;
+function openItemModal(){
+  pendingImage = null;
+  document.getElementById('itemName').value=''; document.getElementById('itemSku').value='';
+  document.getElementById('itemNote').value=''; document.getElementById('itemPrice').value=50; document.getElementById('itemStock').value=10;
+  document.getElementById('imgPickerText').textContent='Click to upload a photo (or add it later)';
+  document.getElementById('imgPicker').querySelectorAll('img').forEach(el=>el.remove());
+  document.getElementById('itemModal').classList.add('show');
+}
+function closeItemModal(){ document.getElementById('itemModal').classList.remove('show'); }
+function previewItemImage(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    pendingImage = e.target.result;
+    document.getElementById('imgPickerText').textContent='';
+    document.getElementById('imgPicker').querySelectorAll('img').forEach(el=>el.remove());
+    const img = document.createElement('img'); img.src = pendingImage;
+    document.getElementById('imgPicker').insertBefore(img, input);
+  };
+  reader.readAsDataURL(file);
+}
+function createItem(){
+  const name = document.getElementById('itemName').value.trim();
+  const sku = document.getElementById('itemSku').value.trim();
+  const note = document.getElementById('itemNote').value.trim() || 'Universal';
+  const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+  const stock = parseInt(document.getElementById('itemStock').value) || 0;
+  if(!name || !sku){ alert('Enter at least a part name and SKU.'); return; }
+  products.push({name, sku, note, price, stock, image:pendingImage});
+  closeItemModal(); renderProducts(); renderInventoryTable();
+}
+
+/* ================= OWNER ================= */
+let branches = [
+  {name:'Kumasi Main', loc:'Kumasi, Ashanti Region', live:true, salesToday:5210, staff:[
+    {name:'Efua Asante', role:'Manager', on:true}, {name:'Kojo Mensah', role:'Cashier', on:true}, {name:'Ama Boateng', role:'Cashier', on:false}]},
+  {name:'Accra Spintex', loc:'Accra, Greater Accra', live:true, salesToday:4380, staff:[
+    {name:'Yaw Owusu', role:'Manager', on:true}, {name:'Linda Frimpong', role:'Cashier', on:true}]},
+  {name:'Takoradi Depot', loc:'Takoradi, Western Region', live:false, salesToday:3350, staff:[
+    {name:'Kwabena Sarpong', role:'Manager', on:false}]},
+];
+function renderKPIs(){
+  const totalStaff = branches.reduce((a,b)=>a+b.staff.length,0);
+  const online = branches.reduce((a,b)=>a+b.staff.filter(s=>s.on).length,0);
+  const pct = totalStaff? Math.round(online/totalStaff*100) : 0;
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi">${gaugeSVG(pct,58,'var(--line)','var(--accent)','var(--ink)',pct+'%','online')}<div class="txt"><div class="label">Staff online now</div><div class="val">${online} of ${totalStaff}</div></div></div>
+    <div class="kpi"><div class="txt"><div class="label">Branches</div><div class="val">${branches.length}</div></div></div>
+    <div class="kpi"><div class="txt"><div class="label">Sales today (all branches)</div><div class="val">GHS ${branches.reduce((a,b)=>a+b.salesToday,0).toLocaleString()}</div></div></div>
+    <div class="kpi"><div class="txt"><div class="label">Low-stock alerts</div><div class="val" style="color:var(--coral)">${products.filter(p=>p.stock<10).length}</div></div></div>
+  `;
+}
+function renderBranches(){
+  document.getElementById('branchList').innerHTML = branches.map((b,i)=>`
+    <div class="branch" id="branch-${i}">
+      <div class="branch-top" onclick="toggleBranch(${i})">
+        <span class="dot ${b.live?'':'idle'}"></span>
+        <div><div class="branch-name">${b.name}</div><div class="branch-loc">${b.loc}</div></div>
+        <div class="branch-stats">
+          <div class="stat"><div class="n">${b.staff.filter(s=>s.on).length}/${b.staff.length}</div><div class="l">on shift</div></div>
+          <div class="stat"><div class="n">GHS ${b.salesToday.toLocaleString()}</div><div class="l">sales today</div></div>
+        </div>
+        <span class="chev">›</span>
+      </div>
+      <div class="branch-body">
+        ${b.staff.map(s=>`<div class="staff-row"><div class="avatar">${initials(s.name)}</div><span>${s.name}</span><span class="staff-status ${s.on?'on':'off'}">● ${s.on?'On shift':'Off shift'}</span><span class="staff-role">${s.role}</span></div>`).join('')}
+        <div class="addstaffbar">
+          <input placeholder="Staff name" id="staffName-${i}">
+          <select id="staffRole-${i}"><option>Cashier</option><option>Manager</option></select>
+          <button onclick="addStaff(${i})">+ Add user</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  renderKPIs();
+}
+function toggleBranch(i){ document.getElementById('branch-'+i).classList.toggle('open'); }
+function addStaff(i){
+  const nameInput = document.getElementById('staffName-'+i);
+  const role = document.getElementById('staffRole-'+i).value;
+  const name = nameInput.value.trim();
+  if(!name){ nameInput.style.borderColor='var(--coral)'; nameInput.placeholder='Enter a name first'; return; }
+  branches[i].staff.push({name, role, on:false});
+  renderBranches(); document.getElementById('branch-'+i).classList.add('open');
+}
+function openBranchModal(){ document.getElementById('branchModal').classList.add('show'); }
+function closeBranchModal(){ document.getElementById('branchModal').classList.remove('show'); }
+function createBranch(){
+  const name = document.getElementById('mBranchName').value.trim(), loc = document.getElementById('mBranchLoc').value.trim();
+  if(!name || !loc){ alert('Enter a branch name and location.'); return; }
+  branches.push({name, loc, live:false, salesToday:0, staff:[]});
+  document.getElementById('mBranchName').value=''; document.getElementById('mBranchLoc').value='';
+  closeBranchModal(); renderBranches();
+}
+renderBranches();
+</script>
+</body>
+</html>
