@@ -508,6 +508,7 @@ Before prod, update these to real credentials and consider extracting to an igno
 | 2026-08-27 | `1eff0f8` | Initial commit (26 files) | ✅ VPS `/var/www/torque` |
 | 2026-08-27 | `eb43b85` | MySQL-compat fix (MAX→CASE WHEN), env-overridable DB creds | ✅ VPS |
 | 2026-08-27 | — | VPS setup: PHP 8.3-FPM + MariaDB 10.11 installed, DB `torque_autoparts` + `torque` user, nginx site on **8081/8444**, seed data auto-loaded (verified via `api/analytics.php`) | ✅ **LIVE** — https://srv1810937.hstgr.cloud:8444/ |
+| 2026-08-27 | `4f7f8b5` | **Auth hardening:** `requireAuth()` on every `api/*.php` (401/403), role gates (POST catalog/POs/inventory → Manager+; customers/branches/settings POST → Owner; export → Manager+), magic `password123`/`admin` bypass + demo auto-login + `switch_role` removed, `loadBranches()` moved to post-login only. Verified live: no-auth 401s, bad-password rejected, role gates 403, Owner/cashier logins OK. | ✅ VPS |
 
 **Production URLs (active 2026-08-27):**
 - `https://srv1810937.hstgr.cloud:8444/` — HTTPS (uses letsencrypt cert)
