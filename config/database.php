@@ -13,12 +13,12 @@ class Database {
             return self::$pdo;
         }
 
-        // 1. Try MySQL Connection (Standard XAMPP credentials)
-        $mysqlHost = '127.0.0.1';
-        $mysqlPort = '3306';
-        $mysqlDb   = 'torque_autoparts';
-        $mysqlUser = 'root';
-        $mysqlPass = '';
+        // 1. Try MySQL Connection (Standard XAMPP credentials; overridable via env vars for production)
+        $mysqlHost = self::env('TORQUE_DB_HOST', '127.0.0.1');
+        $mysqlPort = self::env('TORQUE_DB_PORT', '3306');
+        $mysqlDb   = self::env('TORQUE_DB_NAME', 'torque_autoparts');
+        $mysqlUser = self::env('TORQUE_DB_USER', 'root');
+        $mysqlPass = self::env('TORQUE_DB_PASS', '');
 
         try {
             // First attempt to connect to the specific database
@@ -72,6 +72,17 @@ class Database {
 
     public static function getDriver() {
         return self::$driver;
+    }
+
+    private static function env($key, $default = null) {
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
+            return $_SERVER[$key];
+        }
+        $v = getenv($key);
+        if ($v !== false && $v !== '') {
+            return $v;
+        }
+        return $default;
     }
 
     private static function checkAndMigrate() {

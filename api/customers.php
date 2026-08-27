@@ -54,8 +54,8 @@ if ($method === 'POST') {
             jsonError('Customer and positive payment amount required.');
         }
 
-        $stmt = $db->prepare("UPDATE customers SET credit_balance = MAX(0, credit_balance - ?) WHERE id = ?");
-        $stmt->execute([$amount, $customerId]);
+        $stmt = $db->prepare("UPDATE customers SET credit_balance = CASE WHEN credit_balance - ? < 0 THEN 0 ELSE credit_balance - ? END WHERE id = ?");
+        $stmt->execute([$amount, $amount, $customerId]);
 
         jsonResponse(['success' => true, 'message' => 'Credit payment recorded.']);
     }

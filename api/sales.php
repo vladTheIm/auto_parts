@@ -181,8 +181,8 @@ if ($method === 'POST') {
 
             // If credit sale, deduct balance from customer
             if ($sale['payment_method'] === 'Credit' && !empty($sale['customer_id'])) {
-                $db->prepare("UPDATE customers SET credit_balance = MAX(0, credit_balance - ?) WHERE id = ?")
-                   ->execute([$sale['grand_total'], $sale['customer_id']]);
+                $db->prepare("UPDATE customers SET credit_balance = CASE WHEN credit_balance - ? < 0 THEN 0 ELSE credit_balance - ? END WHERE id = ?")
+                   ->execute([$sale['grand_total'], $sale['grand_total'], $sale['customer_id']]);
             }
 
             $db->commit();
