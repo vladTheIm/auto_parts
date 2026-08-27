@@ -195,15 +195,6 @@ button, input, select, textarea { font-family: inherit; }
 }
 .auth-form input:focus, .auth-form select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); background: var(--panel); }
 
-.demo-chips {
-  display: flex; gap: 6px; margin: 12px 0 6px; flex-wrap: wrap;
-}
-.demo-chip {
-  font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 16px; border: 1px solid var(--line);
-  background: var(--panel-raised); color: var(--ink-soft); cursor: pointer; transition: 0.12s;
-}
-.demo-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-tint); }
-
 .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
 .role-opt { border: 1px solid var(--line); border-radius: 9px; padding: 10px 6px; text-align: center; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ink-soft); background: var(--panel-raised); }
 .role-opt.sel { border-color: var(--accent); background: var(--accent-tint); color: var(--accent-ink); }

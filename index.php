@@ -71,15 +71,6 @@ $settings = Settings::getAll();
         <div class="errline" id="loginErr">Please fill in your credentials.</div>
         
         <button class="authbtn" onclick="App.doLogin()">Sign In to Shop</button>
-
-        <div style="margin-top:16px;">
-          <div style="font-size:11.5px; color:var(--ink-soft); font-weight:600; margin-bottom:6px;">⚡ Quick 1-Tap Demo Logins:</div>
-          <div class="demo-chips">
-            <span class="demo-chip" onclick="fillDemo('owner')">👤 Owner (Efua)</span>
-            <span class="demo-chip" onclick="fillDemo('manager')">💼 Manager (Kojo)</span>
-            <span class="demo-chip" onclick="fillDemo('cashier')">💳 Cashier (Ama)</span>
-          </div>
-        </div>
       </div>
 
       <div id="signupForm" style="display:none;">
@@ -681,14 +672,6 @@ function pickRole(el) {
   el.classList.add('sel');
   signupRole = el.dataset.role;
   document.getElementById('orgLabel').textContent = signupRole === 'Owner' ? 'Dealership Name' : 'Branch Invite Code';
-}
-function fillDemo(role) {
-  const emailInput = document.getElementById('loginEmail');
-  const passInput = document.getElementById('loginPassword');
-  passInput.value = 'password123';
-  if (role === 'owner') emailInput.value = 'efua@asanteautoparts.com';
-  if (role === 'manager') emailInput.value = 'kojo@asanteautoparts.com';
-  if (role === 'cashier') emailInput.value = 'ama@asanteautoparts.com';
 }
 </script>
 <script src="assets/js/app.js"></script>

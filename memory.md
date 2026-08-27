@@ -294,7 +294,7 @@ No React hooks. The pattern is: `App.init()` on `DOMContentLoaded` (theme → se
 | Cashier (Accra) | `linda@asanteautoparts.com` | `password123` |
 | Manager (Takoradi) | `kwabena@asanteautoparts.com` | `password123` |
 
-Magic bypass removed — login now requires the real bcrypt password. UI has 1-tap demo chips on the auth screen (they only prefill the form).
+Magic bypass removed — login requires the real bcrypt password. **No role switcher / demo chips** in the UI (removed): sign in with an account's email+password and the app auto-detects the role from the session, showing only that role's views (sidebar built from `App.navDefs[].roles`).
 
 ### Quick local run
 
