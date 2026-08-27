@@ -319,12 +319,15 @@ curl "http://localhost:8000/api/products.php?branch_id=1"
 |---|---|
 | VPS IP | `187.124.215.68` |
 | Hostinger hostname | `srv1810937.hstgr.cloud` |
-| Production URL | `https://srv1810937.hstgr.cloud/torque/` (path TBD once Apache vhost configured) |
+| Production URL | `http://srv1810937.hstgr.cloud:8081/` and `https://srv1810937.hstgr.cloud:8444/` (dedicated ports; **must open both in Hostinger hPanel firewall**) |
 | SSH user | `root` |
 | SSH password | `vlVvM5@r5oT/Tg-)` |
 | SSH host key | `ssh-ed25519 255 SHA256:f9nGShsKpn0oiZA47eqm4UMTShEYl+hGKpAH0VEobPc` |
-| Target app path | `/var/www/torque` (create; sibling of `/var/www/sms-web`) |
-| PHP/DB | Apache + PHP 8 + **MySQL** (SchoolPro uses Postgres — Torque needs its own `torque_autoparts` DB + MySQL user created via `mysql` on the VPS) |
+| App path on VPS | `/var/www/torque` (cloned from GitHub, sibling of `/var/www/sms-web`) |
+| Web server | nginx (site file `/etc/nginx/sites-enabled/torque`) → PHP 8.3-FPM (`unix:/run/php/php8.3-fpm.sock`) |
+| Database | MariaDB 10.11 on VPS, DB `torque_autoparts`, user `torque` (pw recorded in that nginx file's `fastcgi_param TORQUE_DB_PASS`) |
+| Existing sites (untouched) | hotelpro (80 / 8080 / 8443), sms-web (443) |
+| PHP-FPM site port conflict warning | two `server_name srv1810937.hstgr.cloud` blocks exist on 8080/8443 (hotelpro) and 443 (sms-web) — do NOT reuse those serving Torque |
 
 ### Spawning git (first step before deploy)
 
@@ -498,6 +501,8 @@ Before prod, update these to real credentials and consider extracting to an igno
 
 | Date | Commit | Change | Deployed |
 |---|---|---|---|
-| — | — | (repo not yet spawned) | — |
+| 2026-08-27 | `1eff0f8` | Initial commit (26 files) | ✅ VPS `/var/www/torque` |
+| 2026-08-27 | `eb43b85` | MySQL-compat fix (MAX→CASE WHEN), env-overridable DB creds | ✅ VPS |
+| 2026-08-27 | — | VPS setup: PHP 8.3-FPM + MariaDB 10.11 installed, DB `torque_autoparts` + `torque` user, nginx site on **8081/8444**, seed data auto-loaded (verified via `api/analytics.php`) | ⏸ blocked on ports in Hostinger firewall |
 
 *Append rows here on every production deploy, mirroring the SchoolPro deploy-log practice.*
