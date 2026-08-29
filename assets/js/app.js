@@ -124,9 +124,9 @@ const App = {
 
   navDefs: [
     { id: 'dashboard', label: 'Dashboard', roles: ['Owner', 'Manager', 'Cashier'], blurb: 'Jump to any part of the shop or view quick stats.' },
-    { id: 'pos', label: 'Checkout & POS', roles: ['Owner', 'Manager', 'Cashier'], blurb: 'Ring up sales, scan vehicle parts, and print thermal receipts.' },
-    { id: 'ops', label: 'Shop Operations', roles: ['Owner', 'Manager'], blurb: 'Manage branch inventory, stock audits, restocks, and purchase orders.' },
-    { id: 'owner', label: 'Owner & Multi-Branch', roles: ['Owner'], blurb: 'See sales across all branches, staff shifts, and business settings.' },
+    { id: 'pos', label: 'Sell & Checkout', roles: ['Owner', 'Manager', 'Cashier'], blurb: 'Sell parts, take payments, and print a receipt.' },
+    { id: 'ops', label: 'Stock & Shifts', roles: ['Owner', 'Manager'], blurb: 'Manage stock, order from suppliers, and close your shift.' },
+    { id: 'owner', label: 'Branches & Customers', roles: ['Owner'], blurb: 'See every branch, your team, and customer payments.' },
   ],
 
   navIcons: {
@@ -178,7 +178,7 @@ const App = {
     // Close mobile drawer after navigation
     this.toggleMobileSidebar(false);
 
-    const titles = { dashboard: 'Dashboard Overview', pos: 'Point of Sale / Checkout', ops: 'Shop Operations & Stock', owner: 'Owner Multi-Branch Console' };
+    const titles = { dashboard: 'Dashboard Overview', pos: 'Sell & Checkout', ops: 'Stock & Shifts', owner: 'Branches & Customers' };
     document.getElementById('pageTitle').textContent = titles[id] || 'SpareStack';
 
     // Trigger module loads

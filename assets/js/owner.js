@@ -101,7 +101,7 @@ const Owner = {
     try {
       const res = await App.api('api/branches.php?action=create_branch', 'POST', { name, location, phone });
       if (res.success) {
-        App.toast('New branch location activated!', 'success');
+        App.toast('New branch added!', 'success');
         this.closeBranchModal();
         this.loadBranches();
         App.loadBranches();
@@ -124,7 +124,7 @@ const Owner = {
         branch_id: branchId, name, role
       });
       if (res.success) {
-        App.toast('Staff member registered!', 'success');
+        App.toast('Staff member added!', 'success');
         input.value = '';
         this.loadBranches();
       }
@@ -149,7 +149,7 @@ const Owner = {
     tbody.innerHTML = this.customers.map(c => `
       <tr>
         <td><strong>${c.name}</strong></td>
-        <td>${c.workshop_name || 'Individual Garage'}</td>
+        <td>${c.workshop_name || 'Walk-in Customer'}</td>
         <td class="mono">${c.phone}</td>
         <td><strong class="mono" style="color:${c.credit_balance > 0 ? 'var(--coral-ink)' : 'var(--lime-ink)'};">GHS ${Number(c.credit_balance).toFixed(2)}</strong></td>
         <td class="mono">GHS ${Number(c.credit_limit).toFixed(2)}</td>
@@ -184,7 +184,7 @@ const Owner = {
         name, phone, workshop_name, credit_limit
       });
       if (res.success) {
-        App.toast('Workshop customer registered!', 'success');
+        App.toast('Customer added!', 'success');
         this.closeCustomerModal();
         this.loadCustomers();
       }

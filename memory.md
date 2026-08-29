@@ -277,7 +277,7 @@ No React hooks. The pattern is: `App.init()` on `DOMContentLoaded` (theme → se
 
 - Single stylesheet `assets/css/app.css`, CSS variables in `:root`, dark overrides in `[data-theme="dark"]`.
 - Theme persisted as `localStorage.torque_theme`; auto-follows OS `prefers-color-scheme` when not set manually (`App.initTheme`, app.js:202).
-- Tokens: `--accent:#6C3CE9` (purple), `--lime:#7EA600`, `--coral:#E23A5A`, `--amber:#D97706`, `--radius:12px`, shadows `--shadow-sm/md/lg`. Fonts: **Space Grotesk** (headings), **Inter** (body), **IBM Plex Mono** (`.mono` numbers).
+- Tokens: `--accent:#6C3CE9` (purple, primary), `--lime:#7EA600` (success/stock), `--coral:#E23A5A` (danger/low stock), `--radius:12px`, shadows `--shadow-sm/md/lg`. Fonts: **Space Grotesk** (headings), **Inter** (body), **IBM Plex Mono** (`.mono` numbers). **No orange/amber** — `--amber`/`--amber-tint` tokens were removed (unused); palette stays purple/lime/coral.
 
 ---
 
@@ -482,14 +482,23 @@ Before prod, update these to real credentials and consider extracting to an igno
 
 ### Interaction Patterns
 - Every user action must give feedback: `App.toast(message, 'success'|'error'|'info')` (3.5s auto-dismiss, colored left border).
-- Buttons say what they do: "Complete Sale (Cash) · GHS 1,234.00", "Receive & Restock", "Open Cashier Shift".
+- Buttons say what they do: "Sell Now (Cash) · GHS 1,234.00", "Receive & Add to Stock", "Start My Shift".
 - One primary button per section/modal; secondary actions muted (`btn-dark`).
 - Hover/active affordance on all tappable tiles, cards, chips.
 - Live search-as-you-type in POS (`input` listener), category + vehicle fitment filter chips.
 - Offline-friendly: module loads must not crash when an endpoint 401s (fallbacks already in place).
 
+### Blueprint product rules (HotelPro app-design-blueprint, applied 2026-08-29)
+
+Treat users like laymen with no tech background. Every screen obeys:
+- **3-click limit:** most jobs reachable in ≤3 taps; nothing deeper than 4.
+- **No jargon:** "Close My Shift" not "Reconcile & Clock Out", "Order Parts From Supplier" not "Purchase Order", "Fits All Cars" not "Universal Fitment", "Price Quote" not "Proforma Quotation", "Mechanic Price (15% off)" not "Wholesale", "Move Stock Between Branches" not "Execute Transfer".
+- **One job per screen:** a modal/section does one thing ("Add a New Part", "Start My Shift", "Close My Shift & Count the Till").
+- **Status = color + text always:** never a bare indicator — every dot also has words ("In Stock", "Low on Stock", "Active Now / Off Shift", "Ordered / Received").
+- **Touch-first:** base font ≥16px (never below 16 for reading text, small labels may be smaller), buttons/inputs ≥44px tall, high-frequency actions (Sell, Start Shift, Add to Stock, Save) ≥52px. Apply via `min-height` on `.btn-primary/.btn-dark` (44px), `.completebtn`/`.authbtn` (52px), 44px `.btn-add-cart` and `.qty-btn`.
+
 ### Visual Design
-- Use the token palette, don't invent colors: `--accent` (purple, primary), `--lime` (success/stock), `--coral` (danger/low stock), `--amber` (warnings).
+- Use the token palette, don't invent colors: `--accent` (purple, primary), `--lime` (success/stock), `--coral` (danger/low stock). No orange anywhere.
 - Mono font (`IBM Plex Mono`) for money, SKUs, invoice/payment refs.
 - Muted status pills (`status-pill ok/low/received/ordered`), stock badges on product cards.
 - Keep border-radius consistent (`--radius:12px` cards, buttons ~9px), soft shadows.

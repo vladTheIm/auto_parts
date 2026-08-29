@@ -1,6 +1,6 @@
 /**
- * SpareStack Auto Parts OS - Inventory & Fitment Management
- * Extended with: Inter-Branch Stock Transfers & Sales Returns
+ * SpareStack Auto Parts OS - Inventory & Stock Management
+ * Extended with: Stock Moves Between Branches & Refunds
  */
 
 const Inventory = {
@@ -27,7 +27,7 @@ const Inventory = {
     if (!tbody) return;
 
     if (list.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--ink-faint);">No inventory items recorded.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--ink-faint);">No parts in stock yet.</td></tr>';
       return;
     }
 
@@ -47,16 +47,16 @@ const Inventory = {
           <td>${photoCell}</td>
           <td>
             <strong>${p.name}</strong>
-            <div style="font-size:11.5px; color:var(--ink-soft);">${p.fits_vehicles || 'Universal'}</div>
+            <div style="font-size:12px; color:var(--ink-soft);">${p.fits_vehicles || 'Fits all cars'}</div>
           </td>
           <td class="mono">${p.sku}</td>
           <td><strong style="font-size:14.5px;">${stock}</strong> units</td>
           <td class="mono">${reorder}</td>
-          <td><span class="status-pill ${isLow ? 'low' : 'ok'}">${isLow ? 'Low Stock' : 'Healthy'}</span></td>
+          <td><span class="status-pill ${isLow ? 'low' : 'ok'}">${isLow ? 'Low on Stock' : 'In Stock'}</span></td>
           <td>
-            <button class="btn-dark" style="padding:4px 9px; font-size:11px;" onclick="Inventory.openRestockModal(${p.id})">Restock</button>
-            <button class="btn-dark" style="padding:4px 9px; font-size:11px; background:var(--panel-raised); color:var(--ink); border:1px solid var(--line);" onclick="Inventory.openTransferModal(${p.id})">Transfer</button>
-            <button class="btn-dark" style="padding:4px 9px; font-size:11px; background:var(--panel-raised); color:var(--ink); border:1px solid var(--line);" onclick="Inventory.openAuditLog(${p.id})">Audit</button>
+            <button class="btn-dark" style="padding:6px 10px; font-size:13px;" onclick="Inventory.openRestockModal(${p.id})">+ Add Stock</button>
+            <button class="btn-dark" style="padding:6px 10px; font-size:13px; background:var(--panel-raised); color:var(--ink); border:1px solid var(--line);" onclick="Inventory.openTransferModal(${p.id})">Move</button>
+            <button class="btn-dark" style="padding:6px 10px; font-size:13px; background:var(--panel-raised); color:var(--ink); border:1px solid var(--line);" onclick="Inventory.openAuditLog(${p.id})">History</button>
           </td>
         </tr>
       `;
@@ -83,7 +83,7 @@ const Inventory = {
     const reason = document.getElementById('restockReason')?.value || 'Shipment Restock';
 
     if (isNaN(qty) || qty <= 0) {
-      App.toast('Enter a valid quantity greater than 0', 'error');
+      App.toast('Enter a number above 0 for the pieces added', 'error');
       return;
     }
 
@@ -132,11 +132,11 @@ const Inventory = {
     const quantity = parseInt(document.getElementById('transferQty').value);
 
     if (isNaN(quantity) || quantity <= 0) {
-      App.toast('Enter a valid transfer quantity', 'error');
+      App.toast('Enter how many pieces to move', 'error');
       return;
     }
     if (from_branch_id === to_branch_id) {
-      App.toast('Source and destination branches must be different', 'error');
+      App.toast('Pick two different branches to move between', 'error');
       return;
     }
 
@@ -171,7 +171,7 @@ const Inventory = {
     const reason = document.getElementById('returnReason').value.trim();
 
     if (!invoice_number) {
-      App.toast('Enter invoice number to process return', 'error');
+      App.toast('Enter the receipt number for the return', 'error');
       return;
     }
 
@@ -192,7 +192,7 @@ const Inventory = {
         const tbody = document.getElementById('auditLogBody');
         if (tbody) {
           tbody.innerHTML = res.movements.length === 0
-            ? '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--ink-faint);">No recorded stock movements yet.</td></tr>'
+            ? '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--ink-faint);">No stock changes recorded for this part yet.</td></tr>'
             : res.movements.map(m => `
               <tr>
                 <td>${m.created_at}</td>
@@ -239,7 +239,7 @@ const Inventory = {
     const stock_quantity = parseInt(document.getElementById('newItemStock').value) || 0;
 
     if (!name || !sku) {
-      App.toast('Enter Part Name and SKU to continue', 'error');
+      App.toast('Enter the part name and SKU', 'error');
       return;
     }
 
@@ -248,7 +248,7 @@ const Inventory = {
         name, sku, category_id, fits_vehicles, cost_price, selling_price, stock_quantity
       });
       if (res.success) {
-        App.toast('Part catalog item created successfully!', 'success');
+        App.toast('Part added to the catalog!', 'success');
         this.closeItemModal();
         this.loadInventoryTable();
       }

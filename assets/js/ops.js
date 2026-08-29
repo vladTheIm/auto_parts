@@ -1,5 +1,5 @@
 /**
- * SpareStack Auto Parts OS - Operations (Shifts, Cash Reconciliation & Purchase Orders)
+ * SpareStack Auto Parts OS - Operations (Shifts, Till Counts & Stock Orders)
  */
 
 const Ops = {
@@ -33,19 +33,19 @@ const Ops = {
     if (this.activeShift) {
       if (dot) dot.className = 'dot';
       if (who) who.textContent = `${App.currentUser.name} · ${App.currentUser.role}`;
-      if (since) since.textContent = `Clocked in at ${this.activeShift.opened_at}`;
+      if (since) since.textContent = `Shift started at ${this.activeShift.opened_at}`;
       if (floatEl) floatEl.textContent = `GHS ${Number(this.activeShift.opening_float).toFixed(2)}`;
       if (btn) {
-        btn.textContent = 'Reconcile & Clock Out';
+        btn.textContent = 'Close My Shift';
         btn.className = 'btn-dark';
       }
     } else {
       if (dot) dot.className = 'dot idle';
-      if (who) who.textContent = `${App.currentUser.name} (Off Duty)`;
-      if (since) since.textContent = 'No active shift open';
+      if (who) who.textContent = `${App.currentUser.name} (Off Shift)`;
+      if (since) since.textContent = 'No shift open right now';
       if (floatEl) floatEl.textContent = 'GHS 0.00';
       if (btn) {
-        btn.textContent = 'Clock In / Open Float';
+        btn.textContent = 'Start My Shift';
         btn.className = 'btn-primary';
       }
     }
@@ -73,7 +73,7 @@ const Ops = {
     try {
       const res = await App.api('api/shifts.php?action=clock_in', 'POST', { opening_float });
       if (res.success) {
-        App.toast('Shift opened successfully with cash float!', 'success');
+        App.toast(`Shift started with GHS ${opening_float.toFixed(2)} in the till!`, 'success');
         this.closeClockInModal();
         this.loadShiftStatus();
       }
@@ -111,7 +111,7 @@ const Ops = {
     try {
       const res = await App.api('api/shifts.php?action=clock_out', 'POST', { cash_counted });
       if (res.success) {
-        App.toast('Shift closed and cash drawer settled!', 'success');
+        App.toast('Shift closed. Till is settled!', 'success');
         this.closeClockOutModal();
         this.loadShiftStatus();
       }
@@ -147,7 +147,7 @@ const Ops = {
     if (!wrap) return;
 
     if (this.purchaseOrders.length === 0) {
-      wrap.innerHTML = '<div style="text-align:center; padding:20px; color:var(--ink-faint);">No purchase orders created yet.</div>';
+      wrap.innerHTML = '<div style="text-align:center; padding:20px; color:var(--ink-faint);">You haven\'t ordered any stock yet.</div>';
       return;
     }
 
@@ -159,7 +159,7 @@ const Ops = {
         </div>
         <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
           <span class="status-pill ${po.status === 'Received' ? 'received' : 'ordered'}">${po.status}</span>
-          ${po.status === 'Ordered' ? `<button class="btn-dark" style="font-size:11px; padding:4px 10px;" onclick="Ops.receivePO(${po.id})">Receive & Restock</button>` : ''}
+          ${po.status === 'Ordered' ? `<button class="btn-dark" style="font-size:12px; padding:6px 10px;" onclick="Ops.receivePO(${po.id})">Receive & Add to Stock</button>` : ''}
         </div>
       </div>
     `).join('');
@@ -188,7 +188,7 @@ const Ops = {
         supplier_id, product_id, quantity, branch_id: App.currentBranchId
       });
       if (res.success) {
-        App.toast(`PO ${res.po_number} issued to supplier!`, 'success');
+        App.toast(`Order ${res.po_number} sent to supplier!`, 'success');
         this.closePOModal();
         this.loadPurchaseOrders();
       }
@@ -199,7 +199,7 @@ const Ops = {
     try {
       const res = await App.api('api/purchase_orders.php?action=receive', 'POST', { po_id: poId });
       if (res.success) {
-        App.toast('PO items received and added to inventory!', 'success');
+        App.toast('Order received — stock added!', 'success');
         this.loadPurchaseOrders();
         Inventory.loadInventoryTable();
       }

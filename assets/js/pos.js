@@ -1,6 +1,6 @@
 /**
  * SpareStack Auto Parts OS - Point of Sale (POS) Engine
- * Extended with: Wholesale/Retail Pricing, Proforma Quotations & WhatsApp Receipt Sharing
+ * Extended with: Wholesale/Retail Pricing, Price Quotes & WhatsApp Receipt Sharing
  */
 
 const POS = {
@@ -49,7 +49,7 @@ const POS = {
       }
     });
     this.renderCart();
-    App.toast(this.isWholesale ? 'Wholesale/Mechanic Pricing Activated (15% Off)' : 'Standard Retail Pricing Active', 'info');
+    App.toast(this.isWholesale ? 'Mechanic Price On (15% off)' : 'Full Price On', 'info');
   },
 
   async loadCategories() {
@@ -139,7 +139,7 @@ const POS = {
     const grid = document.getElementById('productGrid');
     if (!grid) return;
     if (list.length === 0) {
-      grid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--ink-faint);">No automotive parts found matching search criteria.</div>';
+      grid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--ink-faint);">No parts found. Try a different name or car model.</div>';
       return;
     }
 
@@ -157,12 +157,12 @@ const POS = {
           <span class="stockbadge ${isLow ? 'low' : 'ok'}">${stock <= 0 ? 'Out of Stock' : (isLow ? stock + ' left' : stock + ' in stock')}</span>
           ${thumbHtml}
           <div class="p-name">${p.name}</div>
-          <div class="p-sku mono">SKU: ${p.sku} ${p.oem_number ? '· OEM: ' + p.oem_number : ''}</div>
-          <div class="p-fits">${p.fits_vehicles || 'Universal Fitment'}</div>
+          <div class="p-sku mono">SKU: ${p.sku}</div>
+          <div class="p-fits">${p.fits_vehicles || 'Fits All Cars'}</div>
           <div class="p-row">
             <div>
               <span class="p-price">GHS ${price.toFixed(2)}</span>
-              ${this.isWholesale ? `<span style="font-size:10px; color:var(--lime-ink); display:block;">Wholesale</span>` : ''}
+              ${this.isWholesale ? `<span style="font-size:10px; color:var(--lime-ink); display:block;">Mechanic Price</span>` : ''}
             </div>
             <button class="btn-add-cart" onclick="POS.addToCart(${p.id})" title="Add to sale">+</button>
           </div>
@@ -251,7 +251,7 @@ const POS = {
       btn.textContent = 'Add items to continue';
     } else {
       btn.disabled = false;
-      btn.textContent = `Complete Sale (${this.selectedPayment}) · GHS ${total.toFixed(2)}`;
+      btn.textContent = `Sell Now (${this.selectedPayment}) · GHS ${total.toFixed(2)}`;
     }
   },
 
@@ -281,7 +281,7 @@ const POS = {
 
   generateQuotation() {
     if (this.cart.length === 0) {
-      App.toast('Add parts to the sale first to generate a quote', 'error');
+      App.toast('Add parts to the sale first, then give the quote.', 'error');
       return;
     }
     const sub = this.cart.reduce((sum, c) => sum + (c.price * c.qty), 0);
@@ -293,14 +293,14 @@ const POS = {
       invoice_number: quoteNo,
       date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
       cashier: App.currentUser.name,
-      payment_method: 'Proforma Quotation (Valid 14 Days)',
+      payment_method: 'Price Quote (Valid 14 Days)',
       subtotal: sub,
       vat_amount: vat,
       grand_total: sub + vat,
       items: this.cart.map(c => ({ product_name: c.name, quantity: c.qty, total_price: c.price * c.qty })),
       dealership: {
         dealership_name: 'SpareStack Auto Parts OS',
-        dealership_tagline: 'OFFICIAL PROFORMA QUOTATION',
+        dealership_tagline: 'PRICE QUOTE',
         address: 'Plot 14 Harper Road, Adum, Kumasi',
         phone: '+233 32 202 4491',
         receipt_footer: 'Official parts estimate. Valid for 14 calendar days from date of issue.'
@@ -309,7 +309,7 @@ const POS = {
 
     this.lastReceiptData = quoteData;
     this.showThermalReceipt(quoteData);
-    App.toast(`Proforma Quote ${quoteNo} generated!`, 'success');
+    App.toast(`Quote ${quoteNo} created!`, 'success');
   },
 
   showThermalReceipt(data) {
