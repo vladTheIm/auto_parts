@@ -313,6 +313,18 @@ curl "http://localhost:8000/api/analytics.php"
 curl "http://localhost:8000/api/products.php?branch_id=1"
 ```
 
+### Lessons learned — do NOT repeat (2026-08-29 blueprint deploy, commit `d09d2a7`)
+
+What went wrong and how to avoid it next time:
+
+- **Local verification was incomplete before deploy.** I ran `node --check` on the JS controllers (all OK) but **did NOT lint `index.php`** because "no local PHP". Line-only, the HTML/JS-in-PHP edits are low-risk, but the rule is: always lint every changed PHP file via the plink pipe (`Get-Content -Raw index.php | plink ... "cat > /tmp/lintcheck.php && php -l /tmp/lintcheck.php"`) BEFORE committing/pushing the deploy. Never skip it just because local PHP is missing.
+- **Committed + pushed the deploy WITHOUT confirming the server was reachable first.** The whole reason we have memory.md is to verify-then-deploy. New rule: **before any deploy, confirm the VPS is up** (a quick `plink ... "echo UP"` and/or `Invoke-WebRequest` on one of the prod URLs). If the server is down, do NOT push-and-assume; keep the commit ready but mark deploy PENDING in the log.
+- **Stale site-state assumption.** I treated the VPS as reliably up because it was live 2 days earlier. Uptime is not guaranteed. Always do a fresh reachability check rather than assuming the last-known-good state persists.
+- **Diagnostic ordering was fine but could be faster.** Efficient triage in one batch: (1) `Resolve-DnsName` → (2) TCP test of ports 22/80/443/8081/8444 → (3) `plink echo`. That instantly distinguishes "DNS gone" vs "host dead" vs "just our port blocked". Do this in ONE parallel call instead of retrying SSH repeatedly.
+- **Do not burn time on repeated SSH retries.** Once a TCP port test shows 22 as closed/timeout, further `plink` retries will also fail — stop retrying locally and escalate to Hostinger hPanel (power/boot/suspend status), then retry only after the user confirms the server is back.
+
+In short for the deploy checklist (apply before EVERY deploy): lint all changed PHP on the server → confirm VPS reachability → push → pull on VPS → restart php8.3-fpm → curl-verify live. If any step can't run (server down), record the commit as ⏳ PENDING in the deploy log and move on.
+
 ---
 
 ## VPS / Production Access
