@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `sales` (
 CREATE TABLE IF NOT EXISTS `sale_items` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `sale_id` INT NOT NULL,
-    `product_id` INT NOT NULL,
+    `product_id` INT NULL,
     `product_name` VARCHAR(200) NOT NULL,
     `sku` VARCHAR(100) NOT NULL,
     `unit_price` DECIMAL(10,2) NOT NULL,

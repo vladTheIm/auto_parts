@@ -35,10 +35,29 @@ if ($method === 'POST') {
 
             // Calculate totals and verify inventory
             foreach ($items as $item) {
-                $prodId = (int)$item['id'];
-                $qty = (int)$item['qty'];
+                $qty = (int)($item['qty'] ?? 1);
                 if ($qty <= 0) continue;
 
+                // Manual / custom item: no catalog product, seller sets the price, no stock to deduct.
+                if (!empty($item['manual'])) {
+                    $lineTotal = round(((float)($item['unit_price'] ?? 0)) * $qty, 2);
+                    $subtotal += $lineTotal;
+                    $saleItemsData[] = [
+                        'product_id' => null,
+                        'product_name' => trim($item['name'] ?? 'Other Item') ?: 'Other Item',
+                        'sku' => 'MANUAL',
+                        'unit_price' => round((float)($item['unit_price'] ?? 0), 2),
+                        'cost_price' => 0,
+                        'quantity' => $qty,
+                        'total_price' => $lineTotal,
+                        'prev_stock' => 0,
+                        'new_stock' => 0,
+                        'manual' => true
+                    ];
+                    continue;
+                }
+
+                $prodId = (int)$item['id'];
                 $stmt = $db->prepare("SELECT p.*, COALESCE(bs.quantity, p.stock_quantity) as current_stock 
                                       FROM products p 
                                       LEFT JOIN branch_stock bs ON bs.product_id = p.id AND bs.branch_id = ? 
@@ -94,6 +113,11 @@ if ($method === 'POST') {
                     $saleId, $si['product_id'], $si['product_name'], $si['sku'],
                     $si['unit_price'], $si['cost_price'], $si['quantity'], $si['total_price']
                 ]);
+
+                // Manual items have no catalog product to deduct stock from.
+                if (!empty($si['manual'])) {
+                    continue;
+                }
 
                 // Update branch stock
                 $stockUpdate->execute([$si['new_stock'], $branchId, $si['product_id']]);

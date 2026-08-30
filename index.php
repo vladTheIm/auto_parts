@@ -229,8 +229,12 @@ $settings = Settings::getAll();
               <select id="posCustomerSelect"></select>
             </div>
 
+            <button class="btn-dark" style="width:100%; margin:0 0 10px; min-height:48px; background:var(--panel-raised); border:1px solid var(--line); color:var(--ink); font-weight:600; font-size:14px;" onclick="POS.openManualModal()">
+              + Add Custom Item (no scanning)
+            </button>
+
             <div class="cart-items" id="cartItems">
-              <div class="empty">Scan barcode or tap a part to add to sale.</div>
+              <div class="empty">Tap a part, scan a barcode, or add a custom item.</div>
             </div>
 
             <div class="cart-perf"></div>
@@ -246,6 +250,18 @@ $settings = Settings::getAll();
               <button data-m="MoMo">MoMo</button>
               <button data-m="Card">Card</button>
               <button data-m="Credit">Credit</button>
+            </div>
+
+            <div id="cashChangeSection" style="display:none; margin:10px 0 0;">
+              <label style="font-size:13px; font-weight:500; color:var(--ink-soft); display:block; margin-bottom:4px;">How much cash did the customer give you?</label>
+              <input type="number" id="cashGiven" step="0.01" min="0" placeholder="e.g. 250" style="width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:8px; font-size:16px; background:var(--panel); color:var(--ink);" oninput="POS.updateChangeDisplay(POS.cartTotal())">
+              <div id="cashGivenRow" style="display:flex; justify-content:space-between; font-size:14px; color:var(--ink-soft); margin-top:8px; display:none;"></div>
+              <div id="cashShortRow" style="display:none; justify-content:space-between; font-size:14px; font-weight:700; margin-top:8px; color:var(--coral);">
+                <span>Still owed</span><span id="cashShortAmount" class="mono">GHS 0.00</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:15px; font-weight:700; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line);">
+                <span>Change to give the customer</span><span id="changeAmount" class="mono" style="color:var(--lime-ink);">GHS 0.00</span>
+              </div>
             </div>
 
             <button class="completebtn" id="completeBtn" onclick="POS.executeCheckout()" disabled>Add items to continue</button>
@@ -425,6 +441,24 @@ $settings = Settings::getAll();
 </div>
 
 <!-- ===================== MODALS ===================== -->
+
+<!-- 0. Custom / Manual Item Modal (no scanning, seller enters the price) -->
+<div class="modal-backdrop" id="manualItemModal">
+  <div class="modal">
+    <h3>Add a Custom Item</h3>
+    <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:14px;">You type the item name, its price, and how many. The system works out the total for you.</p>
+    <label>Item Name</label>
+    <input type="text" id="manualItemName" placeholder="e.g. Wiper blade pair, trade-in part, labour">
+    <label>Price for One (GHS)</label>
+    <input type="number" id="manualItemPrice" step="0.01" min="0" placeholder="e.g. 120">
+    <label>How Many?</label>
+    <input type="number" id="manualItemQty" min="1" value="1">
+    <div class="modal-actions">
+      <button onclick="POS.closeManualModal()">Cancel</button>
+      <button class="btn-primary" onclick="POS.addManualItem()">Add to Sale</button>
+    </div>
+  </div>
+</div>
 
 <!-- 1. Restock Modal -->
 <div class="modal-backdrop" id="restockModal">

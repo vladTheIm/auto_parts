@@ -86,7 +86,49 @@ class Database {
     }
 
     private static function checkAndMigrate() {
+        self::migrateManualItems();
         require_once __DIR__ . '/../database/seed_data.php';
         SeedData::initialize(self::$pdo, self::$driver);
+    }
+
+    /**
+     * Idempotent migration: allow sale_items.product_id to be NULL so the POS
+     * can record manual sales (no catalog product, seller-entered price).
+     * MySQL FK constraints already permit NULL values, so we only relax the NOT NULL flag.
+     */
+    private static function migrateManualItems() {
+        try {
+            if (self::$driver === 'sqlite') {
+                // SQLite cannot ALTER a column; rebuild the table without NOT NULL.
+                $st = self::$pdo->query("SELECT 'a' FROM pragma_table_info('sale_items') WHERE name='product_id' AND notnull=0 LIMIT 1");
+                if ($st->fetchColumn() === false) {
+                    self::$pdo->exec("BEGIN");
+                    self::$pdo->exec("CREATE TABLE sale_items_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        sale_id INTEGER NOT NULL,
+                        product_id INTEGER,
+                        product_name TEXT NOT NULL,
+                        sku TEXT NOT NULL,
+                        unit_price REAL NOT NULL,
+                        cost_price REAL NOT NULL,
+                        quantity INTEGER NOT NULL,
+                        total_price REAL NOT NULL
+                    )");
+                    self::$pdo->exec("INSERT INTO sale_items_new SELECT id, sale_id, product_id, product_name, sku, unit_price, cost_price, quantity, total_price FROM sale_items");
+                    self::$pdo->exec("DROP TABLE sale_items");
+                    self::$pdo->exec("ALTER TABLE sale_items_new RENAME TO sale_items");
+                    self::$pdo->exec("COMMIT");
+                }
+            } else {
+                // MySQL: relax the NOT NULL constraint only if still required (FK already allows NULL).
+                $st = self::$pdo->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sale_items' AND COLUMN_NAME = 'product_id'");
+                $nullable = $st->fetchColumn();
+                if (strtoupper((string)$nullable) !== 'YES') {
+                    self::$pdo->exec("ALTER TABLE sale_items MODIFY COLUMN product_id INT NULL");
+                }
+            }
+        } catch (Exception $e) {
+            // Non-fatal migration wrapper: if ALTER fails (e.g. column already nullable), ignore.
+        }
     }
 }

@@ -13,6 +13,8 @@ const POS = {
   customers: [],
   isWholesale: false,
   lastReceiptData: null,
+  manualItemCounter: 0,
+  changeDue: 0,
 
   init() {
     this.loadCategories();
@@ -37,6 +39,13 @@ const POS = {
         this.updateCartTotals();
       });
     });
+
+    const cashGivenInput = document.getElementById('cashGiven');
+    if (cashGivenInput) {
+      cashGivenInput.addEventListener('input', () => {
+        this.updateChangeDisplay(this.cartTotal());
+      });
+    }
   },
 
   toggleWholesale(enabled) {
@@ -208,26 +217,68 @@ const POS = {
     this.renderCart();
   },
 
+  openManualModal() {
+    document.getElementById('manualItemName').value = '';
+    document.getElementById('manualItemPrice').value = '';
+    document.getElementById('manualItemQty').value = '1';
+    document.getElementById('manualItemModal').classList.add('show');
+  },
+
+  closeManualModal() {
+    document.getElementById('manualItemModal').classList.remove('show');
+  },
+
+  addManualItem() {
+    const name = document.getElementById('manualItemName').value.trim();
+    const unitPrice = parseFloat(document.getElementById('manualItemPrice').value);
+    const qty = parseInt(document.getElementById('manualItemQty').value);
+
+    if (!name) {
+      App.toast('Enter the name of the item', 'error');
+      return;
+    }
+    if (!unitPrice || isNaN(unitPrice) || unitPrice <= 0) {
+      App.toast('Enter the price of the item', 'error');
+      return;
+    }
+    if (isNaN(qty) || qty <= 0) qty = 1;
+
+    this.manualItemCounter += 1;
+    this.cart.push({
+      id: 'manual-' + this.manualItemCounter,
+      name: name,
+      sku: 'MANUAL',
+      price: unitPrice,
+      cost: 0,
+      qty: qty,
+      image_url: null,
+      manual: true
+    });
+    this.closeManualModal();
+    this.renderCart();
+    App.toast('Item added to the sale', 'success');
+  },
+
   renderCart() {
     const wrap = document.getElementById('cartItems');
     const totalCount = this.cart.reduce((sum, c) => sum + c.qty, 0);
     document.getElementById('itemCount').textContent = `${totalCount} item${totalCount !== 1 ? 's' : ''}`;
 
     if (this.cart.length === 0) {
-      wrap.innerHTML = '<div class="empty">Scan barcode or tap a part to add to sale.</div>';
+      wrap.innerHTML = '<div class="empty">Tap a part, scan a barcode, or add a custom item.</div>';
     } else {
       wrap.innerHTML = this.cart.map(c => `
         <div class="cart-line">
           <div class="linfo">
-            <span class="txt">${c.name}</span>
+            <span class="txt">${c.name}${c.manual ? ' <span style="color:var(--ink-faint); font-weight:400;">(custom)</span>' : ''}</span>
           </div>
           <div class="qty-controls">
-            <button class="qty-btn" onclick="POS.updateQty(${c.id}, -1)">-</button>
+            <button class="qty-btn" onclick="POS.updateQty('${c.id}', -1)">-</button>
             <span class="mono" style="font-size:12px; font-weight:700; min-width:14px; text-align:center;">${c.qty}</span>
-            <button class="qty-btn" onclick="POS.updateQty(${c.id}, 1)">+</button>
+            <button class="qty-btn" onclick="POS.updateQty('${c.id}', 1)">+</button>
           </div>
           <span class="mono" style="font-weight:600; margin-left:auto;">GHS ${(c.price * c.qty).toFixed(2)}</span>
-          <span class="rm" onclick="POS.removeFromCart(${c.id})" title="Remove item">✕</span>
+          <span class="rm" onclick="POS.removeFromCart('${c.id}')" title="Remove item">✕</span>
         </div>
       `).join('');
     }
@@ -236,14 +287,14 @@ const POS = {
   },
 
   updateCartTotals() {
-    const sub = this.cart.reduce((sum, c) => sum + (c.price * c.qty), 0);
-    const vatRate = 0.15;
-    const vat = sub * vatRate;
-    const total = sub + vat;
+    const total = this.cartTotal();
+    const sub = total / 1.15;
 
     document.getElementById('tSub').textContent = 'GHS ' + sub.toFixed(2);
-    document.getElementById('tVat').textContent = 'GHS ' + vat.toFixed(2);
+    document.getElementById('tVat').textContent = 'GHS ' + (total - sub).toFixed(2);
     document.getElementById('tTotal').textContent = 'GHS ' + total.toFixed(2);
+
+    this.updateChangeDisplay(total);
 
     const btn = document.getElementById('completeBtn');
     if (this.cart.length === 0) {
@@ -255,12 +306,61 @@ const POS = {
     }
   },
 
+  cartTotal() {
+    const sub = this.cart.reduce((sum, c) => sum + (c.price * c.qty), 0);
+    return sub + (sub * 0.15);
+  },
+
+  updateChangeDisplay(total) {
+    const cashWrap = document.getElementById('cashChangeSection');
+    if (!cashWrap) return;
+    const isCash = this.selectedPayment === 'Cash';
+    cashWrap.style.display = isCash ? 'block' : 'none';
+    if (!isCash) return;
+
+    const given = parseFloat(document.getElementById('cashGiven').value);
+    const changeEl = document.getElementById('changeAmount');
+    const shortWrap = document.getElementById('cashShortRow');
+
+    if (isNaN(given) || given <= 0) {
+      if (changeEl) { changeEl.textContent = 'GHS 0.00'; changeEl.style.color = 'var(--lime-ink)'; }
+      if (shortWrap) shortWrap.style.display = 'none';
+      this.changeDue = 0;
+      return;
+    }
+
+    const change = given - total;
+    if (change >= 0) {
+      if (shortWrap) shortWrap.style.display = 'none';
+      if (changeEl) {
+        changeEl.textContent = 'GHS ' + change.toFixed(2);
+        changeEl.style.color = 'var(--lime-ink)';
+      }
+      this.changeDue = change;
+    } else {
+      if (shortWrap) {
+        shortWrap.style.display = 'flex';
+        const shortEl = document.getElementById('cashShortAmount');
+        if (shortEl) shortEl.textContent = 'GHS ' + Math.abs(change).toFixed(2);
+      }
+      if (changeEl) {
+        changeEl.textContent = 'GHS ' + Math.abs(change).toFixed(2);
+        changeEl.style.color = 'var(--coral-ink)';
+      }
+      this.changeDue = 0;
+    }
+  },
+
   async executeCheckout() {
     if (this.cart.length === 0) return;
 
     const customerId = document.getElementById('posCustomerSelect')?.value || null;
+    const items = this.cart.map(c => c.manual
+      ? { manual: true, name: c.name, unit_price: c.price, qty: c.qty }
+      : { id: c.id, qty: c.qty }
+    );
     const payload = {
-      items: this.cart,
+      items: items,
       payment_method: this.selectedPayment,
       branch_id: App.currentBranchId,
       customer_id: customerId
@@ -273,6 +373,9 @@ const POS = {
         App.toast(`Sale ${res.invoice_number} recorded successfully!`, 'success');
         this.showThermalReceipt(res);
         this.cart = [];
+        this.changeDue = 0;
+        const cashGiven = document.getElementById('cashGiven');
+        if (cashGiven) cashGiven.value = '';
         this.renderCart();
         this.loadProducts(); // refresh stock numbers
       }

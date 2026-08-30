@@ -118,7 +118,7 @@ class SeedData {
             CREATE TABLE IF NOT EXISTS sale_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sale_id INTEGER NOT NULL,
-                product_id INTEGER NOT NULL,
+                product_id INTEGER,
                 product_name TEXT NOT NULL,
                 sku TEXT NOT NULL,
                 unit_price REAL NOT NULL,
