@@ -276,8 +276,7 @@ button, input, select, textarea { font-family: inherit; }
 .tile .tile-go { margin-top: 14px; font-size: 12px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 4px; }
 
 /* ================= POS / CHECKOUT ================= */
-.pos-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; align-items: start; }
-.scanbar { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
+.pos-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; align-items: start; }.scanbar { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
 .scanbar input { flex: 1; border: none; outline: none; font-size: 16px; background: transparent; color: var(--ink); min-width: 0; }
 .btn-scan { background: var(--accent-tint); color: var(--accent-ink); border: 1px solid var(--accent); padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; min-height: 44px; }
 
@@ -387,6 +386,36 @@ table.data-table tr:last-child td { border-bottom: none; }
 
 /* ================= RESPONSIVE MEDIA QUERIES ================= */
 
+/* --- MEDIUM DESKTOP / SMALL LAPTOP (< 1200px) --- */
+/* Shrink the sidebar so the POS cart (with change calculator + Sell button)
+   fits fully on smaller screens without horizontal overflow. */
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 200px;
+    padding: 16px 12px;
+    overflow-y: auto;
+  }
+  .sidebar .brand {
+    font-size: 15px;
+    padding: 0 4px 16px;
+  }
+  .sidebar nav button {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+  .branch-select-wrap {
+    padding: 8px 4px;
+  }
+  .userchip {
+    padding: 8px 4px;
+  }
+  /* Balance the POS columns so the cart gets noticeably more width */
+  .pos-grid {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 14px;
+  }
+}
+
 /* --- TABLET & MOBILE SCREENS (< 900px) --- */
 @media (max-width: 900px) {
   #authScreen {
@@ -423,12 +452,14 @@ table.data-table tr:last-child td { border-bottom: none; }
 /* --- TABLET VIEW (< 1024px) --- */
 @media (max-width: 1024px) {
   .pos-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 16px;
   }
-  .cart {
+  .pos-grid .cart {
+    order: -1;
     position: static;
-    margin-top: 8px;
+    margin-top: 0;
   }
 }
 
