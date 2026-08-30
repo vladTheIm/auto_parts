@@ -303,7 +303,7 @@ button, input, select, textarea { font-family: inherit; }
   #appShell.sidebar-collapsed .toggle-icon-close { display: inline; }
   /* Give the cart the reclaimed width */
   #appShell.sidebar-collapsed .pos-grid {
-    grid-template-columns: 1fr 1.2fr;
+    grid-template-columns: 1fr 1.7fr;
   }
 }
 
@@ -344,7 +344,7 @@ button, input, select, textarea { font-family: inherit; }
 .tile .tile-go { margin-top: 14px; font-size: 12px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 4px; }
 
 /* ================= POS / CHECKOUT ================= */
-.pos-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 18px; align-items: start; }.scanbar { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
+.pos-grid { display: grid; grid-template-columns: 1fr 1.8fr; gap: 18px; align-items: start; }.scanbar { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px; box-shadow: var(--shadow-sm); }
 .scanbar input { flex: 1; border: none; outline: none; font-size: 16px; background: transparent; color: var(--ink); min-width: 0; }
 .btn-scan { background: var(--accent-tint); color: var(--accent-ink); border: 1px solid var(--accent); padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; min-height: 44px; }
 
@@ -479,7 +479,7 @@ table.data-table tr:last-child td { border-bottom: none; }
   }
   /* Balance the POS columns so the cart gets noticeably more width */
   .pos-grid {
-    grid-template-columns: 1fr 1.15fr;
+    grid-template-columns: 1fr 1.6fr;
     gap: 12px;
   }
   /* Compact 3-across product tiles so the shelf takes less space and the
