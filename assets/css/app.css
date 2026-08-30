@@ -415,6 +415,9 @@ table.data-table tr:last-child td { border-bottom: none; }
     font-size: 16px; /* 16px prevents iOS Safari automatic zoom */
     padding: 12px 14px;
   }
+  .view {
+    padding: 16px 14px 44px;
+  }
 }
 
 /* --- TABLET VIEW (< 1024px) --- */
@@ -453,7 +456,8 @@ table.data-table tr:last-child td { border-bottom: none; }
   }
 
   .topbar {
-    padding: 10px 16px;
+    padding: 10px 12px;
+    gap: 8px;
   }
   .topbar h1 {
     font-size: 16px;
@@ -461,8 +465,27 @@ table.data-table tr:last-child td { border-bottom: none; }
   .topbar .badge-branch {
     display: none;
   }
+  .topbar-actions {
+    gap: 6px;
+  }
   .view {
-    padding: 16px 14px 36px;
+    padding: 14px 12px 44px;
+  }
+
+  /* POS: put the cart ABOVE the product shelves so the cashier can
+     check out without having to scroll past every product. */
+  .pos-grid {
+    display: flex;
+    flex-direction: column;
+  }
+  .pos-grid .cart {
+    order: -1;
+    margin-top: 0;
+  }
+
+  .scanbar {
+    padding: 8px 10px;
+    gap: 8px;
   }
 
   .kpi-grid {
@@ -471,22 +494,35 @@ table.data-table tr:last-child td { border-bottom: none; }
   }
   .kpi-card {
     padding: 12px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
   }
   .kpi-card .val {
-    font-size: 17px;
+    font-size: 18px;
+  }
+
+  .tile-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
+    max-height: none; /* flow naturally on mobile, no nested scroll */
+    overflow-y: visible;
   }
   .product-card {
     padding: 10px;
   }
   .product-card .thumb, .product-card .thumb-placeholder {
-    height: 75px;
+    height: 78px;
   }
   .product-card .p-name {
+    font-size: 13px;
+  }
+  .product-card .p-fits {
     font-size: 12px;
   }
 
@@ -494,23 +530,43 @@ table.data-table tr:last-child td { border-bottom: none; }
     padding: 14px;
     border-radius: 12px;
   }
+  .ops-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .ops-section-head h3 {
-    font-size: 14px;
+    font-size: 15px;
+  }
+  .ops-section-head > div:first-child {
+    width: 100%;
+  }
+  .ops-section-head .btn-dark,
+  .ops-section-head .btn-primary {
+    width: 100%;
   }
 
   /* 2-column settings grid becomes 1-column on mobile */
   .ops-section div[style*="grid-template-columns:1fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
+
+  /* Modal should fill the width comfortably on phones */
+  .modal {
+    padding: 18px 16px;
+    max-width: 100%;
+  }
+  .modal-actions button {
+    flex: 1;
+  }
 }
 
 /* --- SMALL PHONES (< 420px) --- */
 @media (max-width: 420px) {
   .product-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
   .kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
   .paymethods {
     grid-template-columns: 1fr 1fr;
@@ -518,4 +574,16 @@ table.data-table tr:last-child td { border-bottom: none; }
   .auth-form {
     padding: 20px 16px;
   }
+  .scanbar {
+    flex-wrap: wrap;
+  }
+  .scanbar input {
+    flex: 1 1 100%;
+  }
+  .btn-scan {
+    flex: 1;
+    justify-content: center;
+    width: 100%;
+  }
 }
+

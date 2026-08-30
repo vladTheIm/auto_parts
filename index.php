@@ -11,7 +11,7 @@ $settings = Settings::getAll();
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($settings['dealership_name']) ?> — Auto Parts OS</title>
   <link rel="stylesheet" href="assets/css/app.css">
 </head>
