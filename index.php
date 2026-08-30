@@ -106,6 +106,10 @@ $settings = Settings::getAll();
     <div class="sidebar" id="appSidebar">
       <div class="brand">
         <span class="mark">S</span>SpareStack OS
+        <button class="sidebar-toggle" id="btnSidebarToggle" onclick="App.toggleSidebar()" title="Collapse / expand sidebar" aria-label="Collapse or expand sidebar">
+          <span class="toggle-icon-open">«</span>
+          <span class="toggle-icon-close">»</span>
+        </button>
       </div>
       <nav id="sideNav"></nav>
 

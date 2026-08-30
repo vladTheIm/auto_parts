@@ -10,6 +10,7 @@ const App = {
 
   init() {
     this.initTheme();
+    this.restoreSidebar();
     this.checkSession();
   },
 
@@ -18,6 +19,21 @@ const App = {
     const backdrop = document.getElementById('sidebarBackdrop');
     if (sidebar) sidebar.classList.toggle('mobile-open', open);
     if (backdrop) backdrop.classList.toggle('mobile-open', open);
+  },
+
+  toggleSidebar() {
+    const shell = document.getElementById('appShell');
+    const collapsed = shell.classList.toggle('sidebar-collapsed');
+    try { localStorage.setItem('ss_sidebar_collapsed', collapsed ? '1' : '0'); } catch (e) {}
+  },
+
+  restoreSidebar() {
+    try {
+      if (localStorage.getItem('ss_sidebar_collapsed') === '1') {
+        const shell = document.getElementById('appShell');
+        if (shell) shell.classList.add('sidebar-collapsed');
+      }
+    } catch (e) {}
   },
 
   async api(endpoint, method = 'GET', data = null) {
