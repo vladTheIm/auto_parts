@@ -13,7 +13,7 @@ $settings = Settings::getAll();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($settings['dealership_name']) ?> — Auto Parts OS</title>
-  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/app.css?v=<?= @filemtime(__DIR__ . '/assets/css/app.css') ?>">
 </head>
 <body>
 
@@ -712,10 +712,10 @@ function pickRole(el) {
   document.getElementById('orgLabel').textContent = signupRole === 'Owner' ? 'Dealership Name' : 'Branch Invite Code';
 }
 </script>
-<script src="assets/js/app.js"></script>
-<script src="assets/js/pos.js"></script>
-<script src="assets/js/inventory.js"></script>
-<script src="assets/js/ops.js"></script>
-<script src="assets/js/owner.js"></script>
+<script src="assets/js/app.js?v=<?= @filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+<script src="assets/js/pos.js?v=<?= @filemtime(__DIR__ . '/assets/js/pos.js') ?>"></script>
+<script src="assets/js/inventory.js?v=<?= @filemtime(__DIR__ . '/assets/js/inventory.js') ?>"></script>
+<script src="assets/js/ops.js?v=<?= @filemtime(__DIR__ . '/assets/js/ops.js') ?>"></script>
+<script src="assets/js/owner.js?v=<?= @filemtime(__DIR__ . '/assets/js/owner.js') ?>"></script>
 </body>
 </html>
