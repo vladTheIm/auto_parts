@@ -156,8 +156,8 @@ const App = {
     const nav = document.getElementById('sideNav');
     const items = this.navDefs.filter(n => n.roles.includes(this.currentUser.role));
     nav.innerHTML = items.map((n, i) => `
-      <button class="${i === 0 ? 'active' : ''}" onclick="App.showView('${n.id}', this)">
-        ${this.navIcons[n.id]}${n.label}
+      <button class="${i === 0 ? 'active' : ''}" onclick="App.showView('${n.id}', this)" title="${n.label}">
+        ${this.navIcons[n.id]}<span class="nav-label">${n.label}</span>
       </button>
     `).join('');
 
