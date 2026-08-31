@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    SpareStack Auto Parts OS - Master Responsive & Mobile Stylesheet
    Design Language: Space Grotesk + Inter + IBM Plex Mono
    Breakpoints: Mobile (< 768px), Tablet (768px - 1024px), Desktop (> 1024px)
@@ -711,3 +711,175 @@ table.data-table tr:last-child td { border-bottom: none; }
   }
 }
 
+
+/* ============================================================
+   PV DESIGN (pv.html) — Vue-style app shell, sale-first POS
+   ============================================================ */
+
+/* ============================================================
+   PV DESIGN (from pv.html) - sale-first POS app shell
+   ============================================================ */
+
+/* Fixed-height app shell: main scrolls internally, sidebar never jumps page */
+#appShell .shell-flex { height: 100vh; }
+#appShell .sidebar { height: 100vh; overflow-y: auto; }
+#appShell .main { height: 100vh; overflow-y: auto; }
+
+/* Brand label wrapper (needed so collapsed rail can hide it cleanly) */
+#appShell .sidebar .brand-label { overflow: hidden; white-space: nowrap; }
+
+/* Sidebar nav buttons: roomier + hidden-label overflow */
+#appShell .sidebar nav button { padding: 12px 12px; border-radius: 9px; color: #C7BFE6; gap: 12px; min-height: 46px; white-space: nowrap; overflow: hidden; }
+#appShell .sidebar nav button .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#appShell .sidebar nav button.active { background: rgba(154, 123, 250, 0.24); }
+#appShell .sidebar nav button:hover { background: rgba(255, 255, 255, 0.08); }
+
+/* Green helpline card in the sidebar */
+.helpline {
+  display: flex; align-items: center; gap: 9px; padding: 10px 10px; margin-bottom: 6px; border-radius: 9px;
+  background: rgba(198, 255, 61, 0.08); border: 1px solid rgba(198, 255, 61, 0.18); color: #DFF7A6; font-size: 12px; line-height: 1.4;
+}
+.helpline svg { flex-shrink: 0; margin-top: 1px; }
+
+/* Sidebar collapse toggle buttons (open « in brand, expand » below brand) */
+#appShell .sidebar .sidebar-toggle {
+  width: 26px; height: 26px; margin-left: auto; border-radius: 7px; border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06); color: #B6ACDA; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; line-height: 1; flex-shrink: 0;
+}
+#appShell .sidebar .sidebar-toggle:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
+
+/* Separate expand button shown ONLY when collapsed */
+#appShell .sidebar-toggle-collapsed {
+  display: none; width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06); color: #B6ACDA; cursor: pointer; align-items: center; justify-content: center; font-size: 13px;
+}
+#appShell .sidebar-toggle-collapsed:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
+
+/* Collapsed desktop icon rail */
+@media (min-width: 769px) {
+  #appShell.sidebar-collapsed .sidebar { width: 72px; padding: 18px 10px; }
+  #appShell.sidebar-collapsed .brand { justify-content: center; padding: 2px 0 18px; }
+  #appShell.sidebar-collapsed .brand-label,
+  #appShell.sidebar-collapsed .sidebar-toggle,
+  #appShell.sidebar-collapsed .helpline,
+  #appShell.sidebar-collapsed .nav-label,
+  #appShell.sidebar-collapsed .branch-select-wrap label,
+  #appShell.sidebar-collapsed .branch-select,
+  #appShell.sidebar-collapsed .userchip .name,
+  #appShell.sidebar-collapsed .userchip .role,
+  #appShell.sidebar-collapsed .userchip .logout { display: none; }
+  #appShell.sidebar-collapsed .sidebar-toggle-collapsed { display: flex !important; margin: 0 auto; }
+  #appShell.sidebar-collapsed nav button { justify-content: center; padding: 12px 0; }
+  #appShell.sidebar-collapsed .branch-select-wrap,
+  #appShell.sidebar-collapsed .userchip { justify-content: center; padding: 10px 0; }
+  #appShell.sidebar-collapsed .pos-grid { grid-template-columns: 1fr 1.7fr; }
+}
+
+/* Product cards - sale-first: shadow card, name, + Add button */
+.product-card { border-radius: 14px; padding: 16px; box-shadow: var(--shadow); }
+.product-card .thumb-placeholder { font-size: 26px; }
+.product-card .p-row { gap: 8px; }
+.product-card .p-price { font-size: 16px; }
+.btn-add-cart {
+  min-width: 48px; height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--accent);
+  background: var(--accent); color: #fff; font-weight: 700; gap: 5px;
+}
+.btn-add-cart:hover { opacity: 0.9; background: var(--accent); color: #fff; }
+.btn-add-cart:disabled { background: var(--line); border-color: var(--line); color: var(--ink-faint); }
+
+/* Cart as a full-height, internally-scrolling checkout panel */
+#appShell .cart { position: sticky; top: 16px; max-height: calc(100vh - 32px); display: flex; flex-direction: column; overflow: hidden; }
+#appShell .cart-scroll { overflow-y: auto; flex: 1; min-height: 0; }
+#appShell .cart-items { max-height: 180px; }
+#appShell .cart-line { flex-wrap: wrap; padding-bottom: 8px; }
+#appShell .cart-line .txt { flex: 1 1 100%; }
+#appShell .cart-line .qty-controls { width: 100%; }
+#appShell .totals .grand { font-size: 19px; margin-top: 6px; padding-top: 7px; }
+#appShell .paymethods button { min-height: 46px; }
+#appShell .completebtn { min-height: 54px; margin-top: 10px; }
+
+/* Mobile product pager (‹ ›) */
+.product-pager { display: none; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; }
+.product-pager.show { display: flex; }
+.pager-btn {
+  width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel);
+  color: var(--ink); font-size: 18px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.pager-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pager-status { font-size: 13.5px; font-weight: 600; color: var(--ink-soft); min-width: 64px; text-align: center; white-space: nowrap; }
+
+/* Medium desktops: keep products thin + 3-across */
+@media (max-width: 1280px) and (min-width: 1025px) {
+  #appShell:not(.sidebar-collapsed) .pos-grid { grid-template-columns: 1fr 1.5fr; gap: 14px; }
+}
+
+/* Tablet: sidebar becomes a drawer; POS stacks cart-first */
+@media (max-width: 1024px) {
+  #appShell .sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: 270px; transform: translateX(-100%); box-shadow: var(--shadow-lg); height: 100vh; }
+  #appShell .sidebar.mobile-open { transform: translateX(0); }
+  #appShell .sidebar-backdrop.mobile-open { display: block; }
+  #appShell.sidebar-collapsed .sidebar { width: 270px; padding: 18px 14px; }
+  #appShell.sidebar-collapsed .brand-label,
+  #appShell.sidebar-collapsed .sidebar-toggle,
+  #appShell.sidebar-collapsed .helpline,
+  #appShell.sidebar-collapsed .nav-label,
+  #appShell.sidebar-collapsed .branch-select-wrap label,
+  #appShell.sidebar-collapsed .branch-select,
+  #appShell.sidebar-collapsed .userchip .name,
+  #appShell.sidebar-collapsed .userchip .role,
+  #appShell.sidebar-collapsed .userchip .logout { display: revert; }
+  #appShell.sidebar-collapsed .brand { justify-content: flex-start; padding: 2px 6px 20px; }
+  #appShell.sidebar-collapsed nav button { justify-content: flex-start; padding: 12px 12px; }
+  #appShell .sidebar-toggle-collapsed { display: none !important; }
+  #appShell .btn-mobile-menu { display: flex; }
+  #appShell .main { height: auto; overflow: visible; }
+  #appShell .shell-flex { height: auto; min-height: 100vh; }
+  .pos-grid { display: flex; flex-direction: column; gap: 16px; }
+  .pos-grid .cart { order: -1; position: static; max-height: none; }
+  #appShell .cart-items { max-height: 260px; }
+}
+
+/* Phone: single-column full-width cards, top-focused scanbar, 2-col pay methods */
+@media (max-width: 768px) {
+  #appShell .view { padding: 14px 12px 100px; }
+  .pos-grid > div:first-child { width: 100%; max-width: 100%; }
+  .product-grid { grid-template-columns: 1fr; grid-auto-rows: auto; max-height: none; overflow: visible; gap: 10px; width: 100%; }
+  .product-card { width: 100%; }
+  .product-card .stockbadge { top: 8px; right: 8px; font-size: 11px; padding: 2px 7px; }
+  .product-card .thumb-placeholder { width: 100%; height: 52px; font-size: 20px; margin-bottom: 6px; }
+  .product-card .p-name { font-size: 14px; }
+  .product-card .p-fits { font-size: 12px; margin-bottom: 8px; }
+  .product-card .p-row { flex-direction: row; justify-content: space-between; align-items: center; margin-top: 2px; gap: 8px; }
+  .product-card .p-price { font-size: 15px; }
+  .btn-add-cart { min-width: 80px; padding: 0 12px; font-size: 13px; height: 38px; }
+  .scanbar { padding: 10px 12px; flex-wrap: wrap; }
+  .scanbar input { flex: 1 1 100%; order: 1; min-width: 0; }
+  .btn-scan { flex: 1 1 100%; order: 2; justify-content: center; }
+  #appShell .cart { padding: 14px; border-radius: 12px; width: 100%; }
+  .paymethods { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 420px) {
+  .product-card .thumb-placeholder { height: 44px; font-size: 18px; }
+  .product-card .p-name { font-size: 13px; }
+  .product-card .p-price { font-size: 14px; }
+  .btn-add-cart { min-width: 72px; font-size: 12px; height: 36px; }
+}
+
+/* Reduced motion + visible keyboard focus (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+
+/* Product picker modal rows + cart two-row helpers */
+.picker-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); cursor: pointer; transition: border-color .15s, background .15s; }
+.picker-row:hover { border-color: var(--accent); background: var(--accent-tint); }
+#appShell .cart-line .linfo { flex: 1 1 100%; display: flex; align-items: center; min-width: 0; }
+#appShell .cart-line .rm { margin-left: auto; }
+#appShell .cart-line .qty-controls { display: flex; align-items: center; gap: 6px; }
+#appShell .cart-line .line-total { margin-left: auto; }

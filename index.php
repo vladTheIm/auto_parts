@@ -111,7 +111,13 @@ $settings = Settings::getAll();
           <span class="toggle-icon-close">»</span>
         </button>
       </div>
+      <button class="sidebar-toggle-collapsed" id="btnSidebarToggleCollapsed" onclick="App.toggleSidebar()" title="Expand sidebar" aria-label="Expand sidebar">»</button>
       <nav id="sideNav"></nav>
+
+      <div class="helpline">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        <span>Sales cut off at 9:00 PM. Call<br>SpareStack support for anything urgent.</span>
+      </div>
 
       <div class="spacer"></div>
 
@@ -210,6 +216,11 @@ $settings = Settings::getAll();
           <div>
             <div class="cats" id="cats"></div>
             <div class="product-grid" id="productGrid"></div>
+            <div class="product-pager" id="productPager">
+              <button class="pager-btn" id="pagerPrev" onclick="POS.pagerPrev()">‹</button>
+              <span class="pager-status" id="pagerStatus"></span>
+              <button class="pager-btn" id="pagerNext" onclick="POS.pagerNext()">›</button>
+            </div>
           </div>
 
           <!-- Live Cart -->
@@ -233,12 +244,14 @@ $settings = Settings::getAll();
               <select id="posCustomerSelect"></select>
             </div>
 
-            <button class="btn-dark" style="width:100%; margin:0 0 10px; min-height:48px; background:var(--panel-raised); border:1px solid var(--line); color:var(--ink); font-weight:600; font-size:14px;" onclick="POS.openManualModal()">
-              + Add Custom Item (no scanning)
+            <button class="btn-dark" style="width:100%; margin:0 0 10px; min-height:48px; background:var(--panel-raised); border:1px solid var(--line); color:var(--ink); font-weight:600; font-size:14px;" onclick="POS.openProductPicker()">
+              + Type in an item that isn't listed
             </button>
 
-            <div class="cart-items" id="cartItems">
-              <div class="empty">Tap a part, scan a barcode, or add a custom item.</div>
+            <div class="cart-scroll">
+              <div class="cart-items" id="cartItems">
+                <div class="empty">Tap a part, scan a barcode, or add a custom item.</div>
+              </div>
             </div>
 
             <div class="cart-perf"></div>
@@ -446,20 +459,34 @@ $settings = Settings::getAll();
 
 <!-- ===================== MODALS ===================== -->
 
-<!-- 0. Custom / Manual Item Modal (no scanning, seller enters the price) -->
-<div class="modal-backdrop" id="manualItemModal">
-  <div class="modal">
-    <h3>Add a Custom Item</h3>
-    <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:14px;">You type the item name, its price, and how many. The system works out the total for you.</p>
-    <label>Item Name</label>
-    <input type="text" id="manualItemName" placeholder="e.g. Wiper blade pair, trade-in part, labour">
-    <label>Price for One (GHS)</label>
-    <input type="number" id="manualItemPrice" step="0.01" min="0" placeholder="e.g. 120">
-    <label>How Many?</label>
-    <input type="number" id="manualItemQty" min="1" value="1">
-    <div class="modal-actions">
-      <button onclick="POS.closeManualModal()">Cancel</button>
-      <button class="btn-primary" onclick="POS.addManualItem()">Add to Sale</button>
+<!-- 0. Product Picker Modal (search/select existing products, add as normal catalog sale) -->
+<div class="modal-backdrop" id="productPickerModal">
+  <div class="modal" style="max-width:440px;">
+    <h3>Add Item to Sale</h3>
+    <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:12px;">
+      Search or pick a part from your catalog. Stock is deducted, exactly like scanning.
+    </p>
+
+    <label>Search Catalog</label>
+    <input type="text" id="pickerSearch" placeholder="Name, part number or SKU..." oninput="POS.renderPickerList(this.value)" autocomplete="off">
+
+    <div id="pickerList" style="max-height:200px; overflow-y:auto; margin:10px 0 0; display:flex; flex-direction:column; gap:6px;">
+      <div class="empty" style="padding:18px;">Type to search your catalog.</div>
+    </div>
+
+    <div id="pickerDetail" style="display:none; margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--panel-raised);">
+      <div style="font-weight:700; font-size:14.5px;" id="pickerItemName"></div>
+      <div style="font-size:13px; color:var(--ink-soft); margin:2px 0 10px;">
+        <span id="pickerItemSku"></span> · <strong id="pickerItemAvail">0</strong> available in stock
+      </div>
+      <label>Price for One (GHS) <span style="color:var(--ink-faint);" id="pickerPriceHint"></span></label>
+      <input type="number" id="pickerItemPrice" step="0.01" min="0">
+      <label>How Many? <span style="color:var(--coral); font-weight:600;" id="pickerQtyWarning"></span></label>
+      <input type="number" id="pickerItemQty" min="1" value="1">
+      <div class="modal-actions">
+        <button onclick="POS.closeProductPicker()">Cancel</button>
+        <button class="btn-primary" onclick="POS.pickerAdd()">Add to Sale</button>
+      </div>
     </div>
   </div>
 </div>

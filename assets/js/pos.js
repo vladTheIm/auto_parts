@@ -15,6 +15,10 @@ const POS = {
   lastReceiptData: null,
   manualItemCounter: 0,
   changeDue: 0,
+  posPage: 0,
+  pickerProduct: null,
+  pickerSearch: '',
+  visibleList: [],
 
   init() {
     this.loadCategories();
@@ -147,12 +151,31 @@ const POS = {
   renderProducts(list) {
     const grid = document.getElementById('productGrid');
     if (!grid) return;
+    this.visibleList = list;
+    const pager = document.getElementById('productPager');
+    const pageSize = this.getPageSize();
+    const showPager = list.length > pageSize;
+    if (pager) pager.classList.toggle('show', showPager);
+    const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+    if (this.posPage > totalPages - 1) this.posPage = totalPages - 1;
+    if (this.posPage < 0) this.posPage = 0;
+    const pageList = showPager ? list.slice(this.posPage * pageSize, (this.posPage + 1) * pageSize) : list;
+
+    if (pager) {
+      const prevBtn = document.getElementById('pagerPrev');
+      const nextBtn = document.getElementById('pagerNext');
+      const status = document.getElementById('pagerStatus');
+      if (prevBtn) prevBtn.disabled = this.posPage === 0;
+      if (nextBtn) nextBtn.disabled = this.posPage >= totalPages - 1;
+      if (status) status.textContent = `${this.posPage + 1} / ${totalPages}`;
+    }
+
     if (list.length === 0) {
       grid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--ink-faint);">No parts found. Try a different name or car model.</div>';
       return;
     }
 
-    grid.innerHTML = list.map((p) => {
+    grid.innerHTML = pageList.map((p) => {
       const stock = parseInt(p.branch_stock ?? p.stock_quantity);
       const isLow = stock <= parseInt(p.branch_reorder ?? p.reorder_level);
       const price = this.isWholesale ? (parseFloat(p.selling_price) * 0.85) : parseFloat(p.selling_price);
@@ -173,21 +196,35 @@ const POS = {
               <span class="p-price">GHS ${price.toFixed(2)}</span>
               ${this.isWholesale ? `<span style="font-size:10px; color:var(--lime-ink); display:block;">Mechanic Price</span>` : ''}
             </div>
-            <button class="btn-add-cart" onclick="POS.addToCart(${p.id})" title="Add to sale">+</button>
+            <button class="btn-add-cart" onclick="POS.addToCart(${p.id})" title="Add to sale" ${stock <= 0 ? 'disabled' : ''}>${stock <= 0 ? 'Out' : '+ Add'}</button>
           </div>
         </div>
       `;
     }).join('');
   },
 
-  addToCart(productId) {
+  addToCart(productId, qty = 1) {
     const prod = this.products.find(p => p.id == productId);
     if (!prod) return;
+    const stock = parseInt(prod.branch_stock ?? prod.stock_quantity) || 0;
+    qty = Math.max(1, parseInt(qty) || 1);
+    if (stock <= 0) {
+      App.toast('This part is out of stock', 'error');
+      return;
+    }
 
     const unitPrice = this.isWholesale ? (parseFloat(prod.selling_price) * 0.85) : parseFloat(prod.selling_price);
     const existing = this.cart.find(c => c.id == productId);
+    const currentQty = existing ? existing.qty : 0;
+    const maxAdd = stock - currentQty;
+    if (maxAdd <= 0) {
+      App.toast(`Only ${stock} available — already all in your sale`, 'error');
+      return;
+    }
+    qty = Math.min(qty, maxAdd);
+
     if (existing) {
-      existing.qty += 1;
+      existing.qty += qty;
     } else {
       this.cart.push({
         id: prod.id,
@@ -195,7 +232,7 @@ const POS = {
         sku: prod.sku,
         price: unitPrice,
         cost: parseFloat(prod.cost_price),
-        qty: 1,
+        qty: qty,
         image_url: prod.image_url
       });
     }
@@ -205,9 +242,15 @@ const POS = {
   updateQty(productId, delta) {
     const item = this.cart.find(c => c.id == productId);
     if (!item) return;
-    item.qty += delta;
-    if (item.qty <= 0) {
+    const prod = this.products.find(p => p.id == item.id);
+    const stock = prod ? (parseInt(prod.branch_stock ?? prod.stock_quantity) || 0) : Infinity;
+    const next = item.qty + delta;
+    if (next <= 0) {
       this.cart = this.cart.filter(c => c.id != productId);
+    } else if (next <= stock) {
+      item.qty = next;
+    } else {
+      App.toast(`Only ${stock} available in stock`, 'error');
     }
     this.renderCart();
   },
@@ -217,46 +260,151 @@ const POS = {
     this.renderCart();
   },
 
-  openManualModal() {
-    document.getElementById('manualItemName').value = '';
-    document.getElementById('manualItemPrice').value = '';
-    document.getElementById('manualItemQty').value = '1';
-    document.getElementById('manualItemModal').classList.add('show');
+  openProductPicker() {
+    const modal = document.getElementById('productPickerModal');
+    if (!modal) return;
+    this.pickerProduct = null;
+    this.pickerSearch = '';
+    this.posPage = 0;
+    const search = document.getElementById('pickerSearch');
+    if (search) search.value = '';
+    document.getElementById('pickerDetail').style.display = 'none';
+    this.renderPickerList('');
+    modal.classList.add('show');
+    if (search) setTimeout(() => search.focus(), 60);
   },
 
-  closeManualModal() {
-    document.getElementById('manualItemModal').classList.remove('show');
+  closeProductPicker() {
+    const modal = document.getElementById('productPickerModal');
+    if (modal) modal.classList.remove('show');
   },
 
-  addManualItem() {
-    const name = document.getElementById('manualItemName').value.trim();
-    const unitPrice = parseFloat(document.getElementById('manualItemPrice').value);
-    const qty = parseInt(document.getElementById('manualItemQty').value);
+  renderPickerList(query) {
+    const list = document.getElementById('pickerList');
+    if (!list) return;
+    const q = (query || '').trim().toLowerCase();
 
-    if (!name) {
-      App.toast('Enter the name of the item', 'error');
+    let pool = this.products;
+    if (q) {
+      pool = this.products.filter(p =>
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.sku || '').toLowerCase().includes(q) ||
+        (p.oem_number && p.oem_number.toLowerCase().includes(q)) ||
+        (p.barcode && p.barcode.includes(q))
+      );
+    }
+
+    if (pool.length === 0) {
+      list.innerHTML = '<div class="empty" style="padding:18px;">No parts match — try a different name or SKU.</div>';
       return;
     }
-    if (!unitPrice || isNaN(unitPrice) || unitPrice <= 0) {
-      App.toast('Enter the price of the item', 'error');
+
+    list.innerHTML = pool.map(p => {
+      const stock = parseInt(p.branch_stock ?? p.stock_quantity) || 0;
+      return `
+        <div class="picker-row" data-id="${p.id}" onclick="POS.pickProduct(${p.id})">
+          <div style="min-width:0; flex:1;">
+            <div style="font-weight:600; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+            <div style="font-size:11.5px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;">SKU ${escapeHtml(p.sku)}</div>
+          </div>
+          <div class="mono" style="text-align:right; font-size:12px; color:${stock <= 0 ? 'var(--coral)' : 'var(--ink-soft)'};">
+            <div style="font-weight:700;">${stock <= 0 ? 'Out of stock' : stock + ' available'}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+  },
+
+  pickProduct(productId) {
+    const prod = this.products.find(p => p.id == productId);
+    if (!prod) return;
+    this.pickerProduct = prod;
+    const stock = parseInt(prod.branch_stock ?? prod.stock_quantity) || 0;
+    const already = (this.cart.find(c => c.id == prod.id) || {}).qty || 0;
+    const maxQty = Math.max(0, stock - already);
+
+    document.getElementById('pickerItemName').textContent = prod.name;
+    document.getElementById('pickerItemSku').textContent = 'SKU: ' + (prod.sku || '');
+    document.getElementById('pickerItemAvail').textContent = maxQty;
+    const priceInput = document.getElementById('pickerItemPrice');
+    priceInput.value = this.isWholesale ? (parseFloat(prod.selling_price) * 0.85).toFixed(2) : parseFloat(prod.selling_price).toFixed(2);
+    priceInput.max = ''; // price is not stock-capped
+    const qtyInput = document.getElementById('pickerItemQty');
+    qtyInput.value = '1';
+    qtyInput.max = maxQty;
+    qtyInput.oninput = () => {
+      let v = parseInt(qtyInput.value) || 1;
+      if (v > maxQty) v = maxQty;
+      if (v < 1) v = 1;
+      qtyInput.value = v;
+    };
+    document.getElementById('pickerQtyWarning').textContent = maxQty <= 0 ? 'No stock left to add' : '';
+    document.getElementById('pickerPriceHint').textContent = stock <= 0 ? '' : `(${maxQty} units max)`;
+    document.getElementById('pickerDetail').style.display = 'block';
+  },
+
+  pickerAdd() {
+    const prod = this.pickerProduct;
+    if (!prod) { App.toast('Pick a part first', 'error'); return; }
+
+    const stock = parseInt(prod.branch_stock ?? prod.stock_quantity) || 0;
+    const already = (this.cart.find(c => c.id == prod.id) || {}).qty || 0;
+    const maxQty = Math.max(0, stock - already);
+
+    let qty = parseInt(document.getElementById('pickerItemQty').value) || 1;
+    if (qty > maxQty) qty = maxQty;
+    if (maxQty <= 0) { App.toast('No stock available for this part', 'error'); return; }
+    if (qty < 1) qty = 1;
+
+    const price = parseFloat(document.getElementById('pickerItemPrice').value);
+    if (!price || isNaN(price) || price <= 0) {
+      App.toast('Enter a valid price', 'error');
       return;
     }
-    if (isNaN(qty) || qty <= 0) qty = 1;
 
-    this.manualItemCounter += 1;
-    this.cart.push({
-      id: 'manual-' + this.manualItemCounter,
-      name: name,
-      sku: 'MANUAL',
-      price: unitPrice,
-      cost: 0,
-      qty: qty,
-      image_url: null,
-      manual: true
-    });
-    this.closeManualModal();
+    // add/merge selected product as a normal catalog line respecting the (possibly edited) price
+    const existing = this.cart.find(c => c.id == prod.id);
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      this.cart.push({
+        id: prod.id,
+        name: prod.name,
+        sku: prod.sku,
+        price: price,
+        cost: parseFloat(prod.cost_price) || 0,
+        qty: qty,
+        image_url: prod.image_url
+      });
+    }
+
+    this.closeProductPicker();
     this.renderCart();
-    App.toast('Item added to the sale', 'success');
+    App.toast('Part added to the sale (stock deducted on payment)', 'success');
+  },
+
+  getPageSize() {
+    return window.innerWidth <= 768 ? 4 : 12;
+  },
+
+  pagerNext() {
+    const pageSize = this.getPageSize();
+    const list = this.visibleList || this.products;
+    if ((this.posPage + 1) * pageSize < list.length) {
+      this.posPage += 1;
+      this.renderProducts(list);
+    }
+  },
+
+  pagerPrev() {
+    if (this.posPage > 0) {
+      this.posPage -= 1;
+      this.renderProducts(this.visibleList || this.products);
+    }
   },
 
   renderCart() {
@@ -271,14 +419,14 @@ const POS = {
         <div class="cart-line">
           <div class="linfo">
             <span class="txt">${c.name}${c.manual ? ' <span style="color:var(--ink-faint); font-weight:400;">(custom)</span>' : ''}</span>
+            <span class="rm" onclick="POS.removeFromCart('${c.id}')" title="Remove item">✕</span>
           </div>
           <div class="qty-controls">
             <button class="qty-btn" onclick="POS.updateQty('${c.id}', -1)">-</button>
             <span class="mono" style="font-size:12px; font-weight:700; min-width:14px; text-align:center;">${c.qty}</span>
             <button class="qty-btn" onclick="POS.updateQty('${c.id}', 1)">+</button>
+            <span class="mono line-total" style="font-weight:700;">GHS ${(c.price * c.qty).toFixed(2)}</span>
           </div>
-          <span class="mono" style="font-weight:600; margin-left:auto;">GHS ${(c.price * c.qty).toFixed(2)}</span>
-          <span class="rm" onclick="POS.removeFromCart('${c.id}')" title="Remove item">✕</span>
         </div>
       `).join('');
     }
@@ -302,7 +450,7 @@ const POS = {
       btn.textContent = 'Add items to continue';
     } else {
       btn.disabled = false;
-      btn.textContent = `Sell Now (${this.selectedPayment}) · GHS ${total.toFixed(2)}`;
+      btn.textContent = `Complete Sale — Collect GHS ${total.toFixed(2)}`;
     }
   },
 

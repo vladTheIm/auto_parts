@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpareStack OS — Sales Preview</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root {
+  --bg: #F4F3FA;
+  --panel: #FFFFFF;
+  --panel-raised: #FAFAFD;
+  --ink: #12131D;
+  --ink-soft: #55576D;
+  --ink-faint: #9295AA;
+  --line: #E2E0EE;
+  --accent: #6C3CE9;
+  --accent-ink: #3D1F94;
+  --accent-tint: #ECE5FD;
+  --lime: #7EA600;
+  --lime-ink: #385000;
+  --lime-tint: #EBF6CE;
+  --coral: #E23A5A;
+  --coral-ink: #8A1030;
+  --coral-tint: #FCE1E7;
+  --radius: 12px;
+  --shadow-sm: 0 1px 3px rgba(20, 10, 60, 0.04);
+  --shadow: 0 2px 5px rgba(20, 10, 60, 0.04), 0 10px 28px rgba(20, 10, 60, 0.06);
+  --shadow-lg: 0 16px 36px rgba(20, 10, 60, 0.14);
+}
+[data-theme="dark"] {
+  --bg: #0C0D14; --panel: #151620; --panel-raised: #1C1D2B; --ink: #F2F1FA;
+  --ink-soft: #A3A5BE; --ink-faint: #6A6D83; --line: #292B3C;
+  --accent: #9A7BFA; --accent-ink: #E4DBFF; --accent-tint: #241C44;
+  --lime: #C6FF3D; --lime-ink: #1C2A00; --lime-tint: #202D08;
+  --coral: #FF6B81; --coral-ink: #FFE4E8; --coral-tint: #3E1622;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow: 0 2px 6px rgba(0,0,0,0.4), 0 12px 30px rgba(0,0,0,0.5);
+  --shadow-lg: 0 18px 40px rgba(0,0,0,0.7);
+}
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] h4,
+[data-theme="dark"] .cart h3, [data-theme="dark"] .product-card .p-name { color:#FFFFFF !important; }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin:0; padding:0; width:100%; height:100%;
+  background: var(--bg); color: var(--ink);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:16px; line-height:1.5; transition:background .2s ease,color .2s ease;
+  overflow:hidden;
+}
+h1,h2,h3,h4 { font-family:'Space Grotesk',sans-serif; font-weight:600; margin:0; letter-spacing:-0.2px; }
+.mono { font-family:'IBM Plex Mono',monospace; }
+button,input,select,textarea { font-family:inherit; }
+button { touch-action:manipulation; }
+
+/* ================= SHELL LAYOUT ================= */
+.shell-flex { display:flex; height:100vh; }
+
+.sidebar {
+  width:240px; flex-shrink:0; background:#120C25; color:#EDEAFC; display:flex; flex-direction:column;
+  padding:18px 14px; border-right:1px solid rgba(255,255,255,0.06); z-index:50;
+  height:100vh; overflow-y:auto;
+  transition: width .22s cubic-bezier(.4,0,.2,1), padding .22s cubic-bezier(.4,0,.2,1), transform .25s ease;
+}
+[data-theme="dark"] .sidebar { background:#08060F; }
+
+.sidebar .brand { display:flex; align-items:center; gap:10px; font-family:'Space Grotesk'; font-weight:700; font-size:16.5px; padding:2px 6px 20px; position:relative; }
+.sidebar .brand .mark { width:30px; height:30px; border-radius:8px; background:var(--lime); color:#120C25; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; flex-shrink:0; }
+.sidebar .brand-label { overflow:hidden; white-space:nowrap; }
+
+.sidebar-toggle {
+  width:26px; height:26px; flex-shrink:0; border-radius:7px; border:1px solid rgba(255,255,255,0.14);
+  background:rgba(255,255,255,0.06); color:#B6ACDA; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:13px; line-height:1; margin-left:auto;
+}
+.sidebar-toggle:hover { color:#fff; background:rgba(255,255,255,0.14); }
+
+.sidebar nav { display:flex; flex-direction:column; gap:4px; }
+.sidebar nav button {
+  display:flex; align-items:center; gap:12px; background:transparent; border:none; color:#C7BFE6; text-align:left;
+  padding:12px 12px; border-radius:9px; font-size:14px; cursor:pointer; font-weight:500; border-left:3px solid transparent;
+  transition:background .15s,color .15s; min-height:46px; width:100%; white-space:nowrap; overflow:hidden;
+}
+.sidebar nav button svg { flex-shrink:0; }
+.sidebar nav button .nav-label { overflow:hidden; text-overflow:ellipsis; }
+.sidebar nav button:hover { background:rgba(255,255,255,0.08); color:#fff; }
+.sidebar nav button.active { background:rgba(154,123,250,0.24); color:#fff; border-left-color:var(--lime); font-weight:600; }
+.sidebar .spacer { flex:1; min-height:12px; }
+
+.sidebar .helpline {
+  display:flex; align-items:center; gap:9px; padding:10px 10px; margin-bottom:6px; border-radius:9px;
+  background:rgba(198,255,61,0.08); border:1px solid rgba(198,255,61,0.18); color:#DFF7A6; font-size:12px; line-height:1.4;
+}
+.sidebar .helpline svg { flex-shrink:0; margin-top:1px; }
+
+.branch-select-wrap { padding:10px 8px; margin-bottom:6px; border-top:1px solid rgba(255,255,255,0.08); }
+.branch-select-wrap label { font-size:11px; letter-spacing:0.3px; color:#9A8FC2; display:block; margin-bottom:6px; font-weight:600; white-space:nowrap; overflow:hidden; }
+.branch-select { width:100%; padding:9px 10px; border-radius:8px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:13px; font-weight:500; cursor:pointer; outline:none; min-height:40px; }
+.branch-select option { background:#1B1238; color:#fff; }
+
+.userchip { display:flex; align-items:center; gap:10px; padding:10px 8px; border-top:1px solid rgba(255,255,255,0.08); }
+.userchip .av { width:34px; height:34px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
+.userchip .name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.userchip .role { font-size:11.5px; color:#9E91CA; white-space:nowrap; }
+.userchip .logout { background:transparent; border:none; color:#9E91CA; cursor:pointer; margin-left:auto; font-size:19px; padding:8px; flex-shrink:0; }
+.userchip .logout:hover { color:#fff; }
+
+/* ---- Collapsed (desktop icon rail) ---- */
+#appShell.sidebar-collapsed .sidebar { width:72px; padding:18px 10px; }
+#appShell.sidebar-collapsed .brand { justify-content:center; padding:2px 0 18px; }
+#appShell.sidebar-collapsed .brand-label,
+#appShell.sidebar-collapsed .sidebar-toggle,
+#appShell.sidebar-collapsed .helpline,
+#appShell.sidebar-collapsed .nav-label,
+#appShell.sidebar-collapsed .branch-select-wrap label,
+#appShell.sidebar-collapsed .branch-select,
+#appShell.sidebar-collapsed .userchip .name,
+#appShell.sidebar-collapsed .userchip .role,
+#appShell.sidebar-collapsed .userchip .logout {
+  display:none;
+}
+#appShell.sidebar-collapsed .sidebar-toggle-collapsed {
+  display:flex !important; margin:0 auto;
+}
+#appShell.sidebar-collapsed nav button {
+  justify-content:center; padding:12px 0;
+}
+#appShell.sidebar-collapsed .branch-select-wrap,
+#appShell.sidebar-collapsed .userchip {
+  justify-content:center;
+  padding:10px 0;
+}
+.sidebar-toggle-collapsed {
+  display:none; width:32px; height:32px; border-radius:8px; border:1px solid rgba(255,255,255,0.14);
+  background:rgba(255,255,255,0.06); color:#B6ACDA; cursor:pointer; align-items:center; justify-content:center; font-size:13px;
+}
+.sidebar-toggle-collapsed:hover { color:#fff; background:rgba(255,255,255,0.14); }
+
+.btn-mobile-menu { display:none; background:transparent; border:none; color:var(--ink); padding:8px; cursor:pointer; font-size:20px; line-height:1; border-radius:8px; min-width:44px; min-height:44px; align-items:center; justify-content:center; }
+.sidebar-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px); z-index:45; }
+
+/* ================= MAIN COLUMN ================= */
+.main { flex:1; display:flex; flex-direction:column; min-width:0; height:100vh; overflow-y:auto; }
+
+.topbar { display:flex; align-items:center; gap:12px; padding:12px 24px; border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; z-index:30; flex-shrink:0; }
+.topbar h1 { font-size:18px; white-space:nowrap; }
+.topbar .badge-branch { font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:20px; background:var(--accent-tint); color:var(--accent-ink); white-space:nowrap; }
+.topbar-actions { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.themeToggle { display:flex; align-items:center; gap:3px; background:var(--panel-raised); border:1px solid var(--line); border-radius:20px; padding:3px; cursor:pointer; }
+.themeToggle .opt { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--ink-faint); font-size:13px; }
+.themeToggle .opt.sel { background:var(--accent); color:#fff; }
+
+.view { padding:20px 24px 44px; max-width:1240px; margin:0 auto; width:100%; }
+
+.page-help { font-size:13.5px; color:var(--ink-soft); margin:-4px 0 14px; }
+
+.scanbar { display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; margin-bottom:14px; box-shadow:var(--shadow-sm); }
+.scanbar input { flex:1; border:none; outline:none; font-size:16px; background:transparent; color:var(--ink); min-width:0; }
+.btn-scan { background:var(--accent-tint); color:var(--accent-ink); border:1px solid var(--accent); padding:8px 14px; border-radius:9px; font-size:13.5px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap; min-height:44px; }
+
+.fitment-bar { display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.fitment-bar::-webkit-scrollbar { display:none; }
+.fitment-tag { font-size:13px; padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:var(--panel); cursor:pointer; white-space:nowrap; font-weight:500; min-height:38px; display:flex; align-items:center; }
+.fitment-tag.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+
+.cats { display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.cats::-webkit-scrollbar { display:none; }
+.cats span { font-size:13px; padding:8px 15px; border-radius:20px; border:1px solid var(--line); cursor:pointer; background:var(--panel); font-weight:500; white-space:nowrap; min-height:38px; display:flex; align-items:center; }
+.cats span.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+.pos-grid { display:grid; grid-template-columns:1fr 1.8fr; gap:18px; align-items:start; }
+.product-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-height:600px; overflow-y:auto; padding-right:2px; }
+
+/* Mobile pager (hidden unless mobile pagination mode is active) */
+.product-pager { display:none; align-items:center; justify-content:center; gap:14px; margin-top:12px; }
+.product-pager.show { display:flex; }
+.pager-btn {
+  width:44px; height:44px; border-radius:10px; border:1px solid var(--line); background:var(--panel);
+  color:var(--ink); font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.pager-btn:disabled { opacity:0.35; cursor:not-allowed; }
+.pager-status { font-size:13.5px; font-weight:600; color:var(--ink-soft); min-width:64px; text-align:center; white-space:nowrap; }
+.product-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; position:relative; box-shadow:var(--shadow); display:flex; flex-direction:column; }
+.product-card .stockbadge { position:absolute; top:8px; right:8px; font-size:11.5px; padding:3px 8px; border-radius:20px; font-weight:700; z-index:1; }
+.stockbadge.ok { background:var(--lime); color:#fff; }
+.stockbadge.low { background:var(--coral); color:#fff; }
+.product-card .thumb-placeholder { width:100%; height:90px; border-radius:8px; margin-bottom:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:var(--panel-raised); border:1.5px dashed var(--line); color:var(--ink-faint); font-size:26px; }
+.product-card .p-name { font-weight:600; font-size:15px; margin:3px 0 2px; line-height:1.3; }
+.product-card .p-sku { font-size:12px; color:var(--ink-faint); margin-bottom:3px; }
+.product-card .p-fits { font-size:12.5px; color:var(--ink-soft); line-height:1.3; margin-bottom:8px; flex:1; }
+.product-card .p-row { display:flex; justify-content:space-between; align-items:center; margin-top:auto; gap:8px; }
+.product-card .p-price { font-weight:700; font-size:16px; font-family:'Space Grotesk'; }
+.btn-add-cart { min-width:48px; height:44px; padding:0 14px; border-radius:10px; border:1px solid var(--accent); background:var(--accent); cursor:pointer; font-size:13.5px; color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; }
+.btn-add-cart:hover { opacity:0.9; }
+.btn-add-cart:disabled { background:var(--line); border-color:var(--line); color:var(--ink-faint); cursor:not-allowed; }
+
+.cart {
+  background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow);
+  position:sticky; top:16px;
+  max-height:calc(100vh - 32px);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+.cart h3 { font-size:16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.cart-scroll { overflow-y:auto; flex:1; min-height:0; }
+.cart-items { margin:10px 0; display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto; min-height:36px; }
+.cart-items .empty { color:var(--ink-faint); font-size:14px; padding:20px 8px; text-align:center; line-height:1.5; }
+.cart-line { display:flex; justify-content:space-between; align-items:center; font-size:14px; gap:6px; padding-bottom:8px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.cart-line:last-child { border-bottom:none; }
+.cart-line .txt { font-weight:500; font-size:14px; flex:1 1 100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cart-line .qty-controls { display:flex; align-items:center; gap:6px; width:100%; }
+.cart-line .qty-btn { width:32px; height:32px; border-radius:8px; border:1px solid var(--line); background:var(--panel-raised); cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; font-weight:600; }
+.cart-line .qty-num { min-width:22px; text-align:center; font-weight:600; }
+.cart-line .lprice { margin-left:auto; font-weight:600; }
+.cart-line .rm { cursor:pointer; color:var(--ink-faint); font-size:13px; padding:6px; border-radius:6px; }
+.cart-line .rm:hover { color:var(--coral); background:var(--coral-tint); }
+.cart-perf { height:1px; margin:12px -16px; background:repeating-linear-gradient(to right, var(--line) 0 6px, transparent 6px 12px); flex-shrink:0; }
+
+.customer-select-bar { margin:8px 0; flex-shrink:0; }
+.customer-select-bar select { width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--line); font-size:15px; background:var(--panel); color:var(--ink); min-height:46px; }
+
+.totals { flex-shrink:0; }
+.totals div { display:flex; justify-content:space-between; font-size:14px; color:var(--ink-soft); margin:4px 0; }
+.totals .grand { font-size:19px; font-weight:700; color:var(--ink); margin-top:6px; padding-top:7px; border-top:1px solid var(--line); font-family:'Space Grotesk'; }
+
+.paymethods { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:12px 0; flex-shrink:0; }
+.paymethods button { padding:10px 2px; border-radius:9px; border:1px solid var(--line); background:var(--panel); font-size:13px; font-weight:600; cursor:pointer; color:var(--ink); text-align:center; min-height:46px; }
+.paymethods button.sel { background:var(--accent-tint); border-color:var(--accent); color:var(--accent-ink); }
+
+.completebtn { width:100%; padding:14px 0; border:none; border-radius:10px; background:var(--lime); color:var(--lime-ink); font-size:16px; font-weight:700; cursor:pointer; min-height:54px; flex-shrink:0; margin-top:10px; }
+.completebtn:disabled { background:var(--line); color:var(--ink-faint); cursor:not-allowed; }
+
+.btn-dark { background:var(--ink); color:var(--bg); border:none; padding:11px 15px; border-radius:9px; font-size:14px; font-weight:500; cursor:pointer; white-space:nowrap; min-height:46px; }
+
+/* Modal */
+.modal-backdrop { position:fixed; inset:0; background:rgba(12,8,30,0.6); backdrop-filter:blur(3px); display:none; align-items:center; justify-content:center; z-index:100; padding:16px; }
+.modal-backdrop.show { display:flex; }
+.modal { background:var(--panel); border-radius:16px; padding:22px; width:100%; max-width:440px; border:1px solid var(--line); box-shadow:var(--shadow-lg); max-height:90vh; overflow-y:auto; }
+.modal h3 { font-size:18px; margin-bottom:6px; }
+.modal label { font-size:13.5px; font-weight:500; color:var(--ink-soft); display:block; margin:12px 0 5px; }
+.modal input, .modal select { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:8px; font-size:16px; background:var(--panel); color:var(--ink); min-height:46px; }
+.modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; flex-wrap:wrap; }
+.modal-actions button { padding:11px 18px; border-radius:9px; border:1px solid var(--line); background:var(--panel); cursor:pointer; font-size:14px; font-weight:600; color:var(--ink); min-height:46px; flex:1; }
+
+#toastContainer { position:fixed; bottom:20px; right:20px; left:20px; display:flex; flex-direction:column; gap:8px; z-index:200; pointer-events:none; max-width:360px; margin-left:auto; align-items:flex-end; }
+.toast { background:var(--ink); color:var(--bg); padding:13px 18px; border-radius:10px; font-size:14px; font-weight:500; box-shadow:var(--shadow-lg); pointer-events:auto; animation:toastIn .18s ease; display:flex; align-items:center; gap:8px; }
+@keyframes toastIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+/* Sticky mobile checkout summary bar (only shown on small screens when cart has items) */
+.mobile-cart-nub {
+  display:none;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:1280px) and (min-width:1025px) {
+  #appShell:not(.sidebar-collapsed) .pos-grid { grid-template-columns:1fr 1.5fr; gap:14px; }
+}
+
+@media (max-width:1024px) {
+  html, body { overflow:auto; height:auto; }
+  .shell-flex { height:auto; min-height:100vh; }
+
+  .sidebar {
+    position:fixed; top:0; bottom:0; left:0; width:270px; padding:18px 14px;
+    transform:translateX(-100%); box-shadow:var(--shadow-lg); height:100vh;
+  }
+  .sidebar.mobile-open { transform:translateX(0); }
+  .sidebar-backdrop.mobile-open { display:block; }
+  /* collapsed state is a desktop-only concept; ignore it below 1024px */
+  #appShell.sidebar-collapsed .sidebar { width:270px; padding:18px 14px; }
+  #appShell.sidebar-collapsed .brand-label,
+  #appShell.sidebar-collapsed .sidebar-toggle,
+  #appShell.sidebar-collapsed .helpline,
+  #appShell.sidebar-collapsed .nav-label,
+  #appShell.sidebar-collapsed .branch-select-wrap label,
+  #appShell.sidebar-collapsed .branch-select,
+  #appShell.sidebar-collapsed .userchip .name,
+  #appShell.sidebar-collapsed .userchip .role,
+  #appShell.sidebar-collapsed .userchip .logout { display:revert; }
+  #appShell.sidebar-collapsed .brand { justify-content:flex-start; padding:2px 6px 20px; }
+  #appShell.sidebar-collapsed nav button { justify-content:flex-start; padding:12px 12px; }
+  .sidebar-toggle-collapsed { display:none !important; }
+
+  .btn-mobile-menu { display:flex; }
+  .main { height:auto; overflow:visible; }
+
+  .pos-grid { display:flex; flex-direction:column; gap:16px; }
+  .pos-grid .cart { order:-1; position:static; max-height:none; }
+  .cart-items { max-height:260px; }
+}
+
+@media (max-width:768px) {
+  .topbar { padding:10px 12px; gap:8px; }
+  .topbar h1 { font-size:16px; }
+  .topbar .badge-branch { display:none; }
+  .view { padding:14px 12px 100px; }
+
+  /* Single column: each product card is a full, self-contained tile
+     (image on top, name/sku/fits, price + Add together at the bottom),
+     stacked a / b / c / d — never side by side, so no horizontal scroll
+     is ever needed. Pagination still limits how many stack at once.
+     Its wrapper and the cart both live at the same width inside
+     .pos-grid, so the tile lines up edge-to-edge with the sales box. */
+  .pos-grid > div:first-child { width:100%; max-width:100%; }
+  .product-grid {
+    grid-template-columns:1fr;
+    grid-auto-rows: auto;
+    max-height:none;
+    overflow:visible;
+    gap:10px;
+    width:100%;
+  }
+  .product-card { width:100%; }
+  .product-card .stockbadge { top:8px; right:8px; font-size:11px; padding:2px 7px; }
+  .product-card .thumb-placeholder { width:100%; height:52px; font-size:20px; margin-bottom:6px; }
+  .product-card .p-name { font-size:14px; }
+  .product-card .p-sku { font-size:11.5px; }
+  .product-card .p-fits { font-size:12px; margin-bottom:8px; }
+  .product-card .p-row { flex-direction:row; justify-content:space-between; align-items:center; margin-top:2px; gap:8px; }
+  .product-card .p-price { font-size:15px; }
+  .btn-add-cart { min-width:80px; padding:0 12px; font-size:13px; height:38px; }
+
+  .scanbar { padding:10px 12px; flex-wrap:wrap; }
+  .scanbar input { flex:1 1 100%; order:1; min-width:0; }
+  .btn-scan { flex:1 1 100%; order:2; justify-content:center; }
+
+  .cart { padding:14px; border-radius:12px; width:100%; }
+  .paymethods { grid-template-columns:1fr 1fr; }
+}
+
+@media (max-width:420px) {
+  .product-card .thumb-placeholder { height:44px; font-size:18px; }
+  .product-card .p-name { font-size:13px; }
+  .product-card .p-price { font-size:14px; }
+  .btn-add-cart { min-width:72px; font-size:12px; height:36px; }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { transition:none !important; animation:none !important; }
+}
+
+/* Visible keyboard focus for accessibility */
+button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline:2px solid var(--accent); outline-offset:2px;
+}
+</style>
+</head>
+<body>
+
+<div id="toastContainer"></div>
+
+<div id="appShell" class="">
+<div class="shell-flex">
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar(false)"></div>
+
+  <div class="sidebar" id="appSidebar">
+    <div class="brand">
+      <span class="mark">S</span><span class="brand-label">SpareStack OS</span>
+      <button class="sidebar-toggle" id="btnCollapse" onclick="toggleCollapse()" title="Make the menu smaller" aria-label="Collapse menu">«</button>
+    </div>
+    <button class="sidebar-toggle-collapsed" id="btnExpand" onclick="toggleCollapse()" title="Show the full menu" aria-label="Expand menu">»</button>
+
+    <nav>
+      <button onclick="toast('This is a preview — only Point of Sale is wired up')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span class="nav-label">Overview</span>
+      </button>
+      <button class="active" onclick="toggleMobileSidebar(false)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span class="nav-label">Sell to a Customer</span>
+      </button>
+      <button onclick="toast('This is a preview — only Point of Sale is wired up')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span class="nav-label">Stock &amp; Orders</span>
+      </button>
+      <button onclick="toast('This is a preview — only Point of Sale is wired up')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M13 21V11l6 4v6"/></svg>
+        <span class="nav-label">Branches &amp; Customers</span>
+      </button>
+    </nav>
+
+    <div class="spacer"></div>
+
+    <div class="helpline">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>Tap a part on the left to add it, then press <strong>Complete Sale</strong> when done.</span>
+    </div>
+
+    <div class="branch-select-wrap">
+      <label>Working At</label>
+      <select class="branch-select">
+        <option>Kumasi Main</option>
+        <option>Accra Branch</option>
+        <option>Cape Coast Branch</option>
+      </select>
+    </div>
+    <div class="userchip">
+      <div class="av">EA</div>
+      <div style="min-width:0;">
+        <div class="name">Efua Asante</div>
+        <div class="role">Owner</div>
+      </div>
+      <button class="logout" title="Log Out">⏻</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="btn-mobile-menu" onclick="toggleMobileSidebar(true)" aria-label="Open Menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <h1>Sell to a Customer</h1>
+      <span class="badge-branch">Kumasi Main</span>
+      <div class="topbar-actions">
+        <div class="themeToggle" onclick="toggleTheme()" title="Switch light/dark">
+          <div class="opt sel" id="lightOpt">☀</div>
+          <div class="opt" id="darkOpt">☾</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view">
+      <p class="page-help">Find the part, tap it to add to the sale, then take payment below.</p>
+
+      <div class="scanbar">
+        <span class="mono" style="color:var(--ink-faint); font-size:16px;">⌕</span>
+        <input id="posSearch" placeholder="Type a part name or car (e.g. Corolla, Civic, Elantra)..." oninput="currentPage=1; renderProducts()">
+        <button class="btn-scan" onclick="simulateScan()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5v14M8 5v14M12 5v14M17 5v14M21 5v14"/></svg>
+          Scan Barcode
+        </button>
+      </div>
+
+      <div class="fitment-bar" id="fitmentBar">
+        <span class="fitment-tag active" data-v="all" onclick="selectVehicle('all', this)">All Cars</span>
+        <span class="fitment-tag" data-v="Toyota" onclick="selectVehicle('Toyota', this)">Toyota Corolla / Matrix</span>
+        <span class="fitment-tag" data-v="Honda" onclick="selectVehicle('Honda', this)">Honda Accord / Civic</span>
+        <span class="fitment-tag" data-v="Nissan" onclick="selectVehicle('Nissan', this)">Nissan Almera / Tiida</span>
+        <span class="fitment-tag" data-v="Hyundai" onclick="selectVehicle('Hyundai', this)">Hyundai Elantra</span>
+        <span class="fitment-tag" data-v="Kia" onclick="selectVehicle('Kia', this)">Kia Forte / Cerato</span>
+      </div>
+
+      <div class="pos-grid">
+        <div>
+          <div class="cats" id="cats"></div>
+          <div class="product-grid" id="productGrid"></div>
+          <div class="product-pager" id="productPager">
+            <button class="pager-btn" id="pagerPrev" onclick="pagerGo(-1)" aria-label="Previous parts">‹</button>
+            <span class="pager-status" id="pagerStatus">1 of 1</span>
+            <button class="pager-btn" id="pagerNext" onclick="pagerGo(1)" aria-label="More parts">›</button>
+          </div>
+        </div>
+
+        <div class="cart">
+          <h3>This Sale <span class="mono" id="itemCount" style="font-size:12px; color:var(--ink-faint); font-weight:500;">0 items</span></h3>
+
+          <div class="cart-scroll">
+            <div style="display:flex; gap:6px; background:var(--panel-raised); border:1px solid var(--line); border-radius:8px; padding:3px; margin:10px 0;">
+              <button style="flex:1; border:none; padding:9px 0; min-height:42px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; background:var(--accent); color:#fff;" id="btnRetailTier" onclick="toggleWholesale(false)">Regular Price</button>
+              <button style="flex:1; border:none; padding:9px 0; min-height:42px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; background:transparent; color:var(--ink-soft);" id="btnWholesaleTier" onclick="toggleWholesale(true)">Mechanic Price (−15%)</button>
+            </div>
+
+            <div class="customer-select-bar">
+              <select id="posCustomerSelect">
+                <option value="">Walk-in customer (no account)</option>
+                <option value="1">Kojo Mensah — Precise Wheels Auto Clinic</option>
+                <option value="2">Ama Boateng — Boateng Motors Garage</option>
+              </select>
+            </div>
+
+            <button class="btn-dark" style="width:100%; margin:0 0 10px; min-height:48px; background:var(--panel-raised); border:1px solid var(--line); color:var(--ink); font-weight:600; font-size:14px;" onclick="openManualModal()">
+              + Type in an item that isn't listed
+            </button>
+
+            <div class="cart-items" id="cartItems">
+              <div class="empty">Nothing added yet.<br>Tap a part above to start the sale.</div>
+            </div>
+
+            <div class="cart-perf"></div>
+
+            <div class="totals">
+              <div><span>Items Subtotal</span><span id="tSub" class="mono">GHS 0.00</span></div>
+              <div><span>VAT (15%)</span><span id="tVat" class="mono">GHS 0.00</span></div>
+              <div class="grand"><span>Customer Pays</span><span id="tTotal" class="mono">GHS 0.00</span></div>
+            </div>
+
+            <p style="font-size:12.5px; color:var(--ink-soft); margin:10px 0 4px;">How is the customer paying?</p>
+            <div class="paymethods" id="payMethods">
+              <button class="sel" data-m="Cash" onclick="selectPay('Cash', this)">Cash</button>
+              <button data-m="MoMo" onclick="selectPay('MoMo', this)">MoMo</button>
+              <button data-m="Card" onclick="selectPay('Card', this)">Card</button>
+              <button data-m="Credit" onclick="selectPay('Credit', this)">On Credit</button>
+            </div>
+
+            <div id="cashChangeSection" style="display:none; margin:10px 0 0;">
+              <label style="font-size:13px; font-weight:500; color:var(--ink-soft); display:block; margin-bottom:4px;">Cash handed over by the customer</label>
+              <input type="number" id="cashGiven" step="0.01" min="0" placeholder="e.g. 250" style="width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:8px; font-size:16px; background:var(--panel); color:var(--ink); min-height:48px;" oninput="updateChangeDisplay()">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:15px; font-weight:700; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);">
+                <span>Give back as change</span><span id="changeAmount" class="mono" style="color:var(--lime-ink);">GHS 0.00</span>
+              </div>
+            </div>
+
+            <button class="completebtn" id="completeBtn" disabled onclick="executeCheckout()">Add items to continue</button>
+
+            <button class="btn-dark" style="width:100%; margin-top:8px; padding:11px 0; min-height:46px; background:var(--panel-raised); border:1px solid var(--line); color:var(--ink); font-weight:600; font-size:14px;" onclick="toast('Price quote created (preview only)')">
+              📄 Print a Quote (No Payment Yet)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Manual item modal -->
+<div class="modal-backdrop" id="manualItemModal">
+  <div class="modal">
+    <h3>Add an Item Not on the List</h3>
+    <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:4px;">Type the name, the price for one, and how many the customer is buying.</p>
+    <label>What is it?</label>
+    <input type="text" id="manualItemName" placeholder="e.g. Wiper blade pair, labour charge">
+    <label>Price for One (GHS)</label>
+    <input type="number" id="manualItemPrice" step="0.01" min="0" placeholder="e.g. 120">
+    <label>How Many?</label>
+    <input type="number" id="manualItemQty" min="1" value="1">
+    <div class="modal-actions">
+      <button onclick="closeManualModal()">Cancel</button>
+      <button style="background:var(--accent); color:#fff; border-color:var(--accent);" onclick="addManualItem()">Add to Sale</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt modal -->
+<div class="modal-backdrop" id="receiptModal">
+  <div class="modal" style="max-width:380px;">
+    <div id="receiptContent"></div>
+    <div class="modal-actions" style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+      <button class="btn-dark" style="width:100%;" onclick="closeReceiptModal()">Done — Start Next Sale</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleMobileSidebar(open){
+  document.getElementById('appSidebar').classList.toggle('mobile-open', open);
+  document.getElementById('sidebarBackdrop').classList.toggle('mobile-open', open);
+}
+function toggleCollapse(){
+  document.getElementById('appShell').classList.toggle('sidebar-collapsed');
+}
+
+// ---------- Sample data (preview only) ----------
+const PRODUCTS = [
+  { id:1, name:"Ceramic Front Brake Pads", sku:"BP-8842", cat:"Brakes", fits:"Toyota Corolla (2012-2018) 1.8L", price:180, cost:110, stock:14, low:5, vehicle:"Toyota" },
+  { id:2, name:"Rear Brake Pad Set", sku:"BP-8843", cat:"Brakes", fits:"Honda Civic (2010-2015) 1.8L", price:165, cost:95, stock:3, low:5, vehicle:"Honda" },
+  { id:3, name:"Oil Filter", sku:"OF-1120", cat:"Filters", fits:"Toyota Corolla / Matrix 1.6-1.8L", price:35, cost:18, stock:40, low:10, vehicle:"Toyota" },
+  { id:4, name:"Cabin Air Filter", sku:"CF-2201", cat:"Filters", fits:"Hyundai Elantra (2011-2016)", price:48, cost:22, stock:22, low:8, vehicle:"Hyundai" },
+  { id:5, name:"12V Maintenance-Free Battery", sku:"BAT-6600", cat:"Electrical", fits:"Universal — 60Ah", price:620, cost:480, stock:6, low:4, vehicle:"all" },
+  { id:6, name:"Alternator", sku:"ALT-3390", cat:"Electrical", fits:"Nissan Almera / Tiida 1.5-1.6L", price:890, cost:640, stock:2, low:3, vehicle:"Nissan" },
+  { id:7, name:"Front Shock Absorber", sku:"SUS-4471", cat:"Suspension", fits:"Kia Forte / Cerato (2013-2018)", price:340, cost:230, stock:9, low:4, vehicle:"Kia" },
+  { id:8, name:"Steering Rack End", sku:"SUS-4499", cat:"Suspension", fits:"Honda Accord (2008-2012) 2.4L", price:210, cost:140, stock:11, low:4, vehicle:"Honda" },
+  { id:9, name:"Spark Plug Set (4pc)", sku:"IGN-1001", cat:"Ignition", fits:"Toyota Corolla / Matrix 1.6-1.8L", price:95, cost:52, stock:26, low:8, vehicle:"Toyota" },
+  { id:10, name:"Ignition Coil", sku:"IGN-1055", cat:"Ignition", fits:"Hyundai Elantra 1.6-1.8L", price:230, cost:150, stock:7, low:4, vehicle:"Hyundai" },
+  { id:11, name:"Radiator", sku:"ENG-2280", cat:"Engine", fits:"Nissan Almera / Tiida 1.5-1.6L", price:520, cost:370, stock:4, low:3, vehicle:"Nissan" },
+  { id:12, name:"Full Synthetic Engine Oil 5W-30 (4L)", sku:"FL-3305", cat:"Fluids", fits:"Universal — most 4-cylinder engines", price:210, cost:150, stock:31, low:10, vehicle:"all" },
+];
+const CATEGORIES = ["All","Brakes","Filters","Electrical","Suspension","Ignition","Engine","Fluids"];
+
+let cart = [];
+let manualCounter = 1000;
+let activeCat = "All";
+let activeVehicle = "all";
+let isWholesale = false;
+let payMethod = "Cash";
+const VAT_RATE = 0.15;
+
+// ---------- Mobile pagination ----------
+// Single column on mobile: cards stack a / b / c / d, full width, no
+// horizontal scrolling. Pagination just limits how many stack per screen.
+const mobileQuery = window.matchMedia('(max-width:768px)');
+let currentPage = 1;
+const MOBILE_PAGE_SIZE = 4;
+
+function isMobile(){ return mobileQuery.matches; }
+
+function pagerGo(delta){
+  currentPage += delta;
+  renderProducts();
+}
+
+function money(n){ return "GHS " + n.toFixed(2); }
+
+function toast(msg){
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+
+function toggleTheme(){
+  const html = document.documentElement;
+  const dark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', dark ? 'light' : 'dark');
+  document.getElementById('lightOpt').classList.toggle('sel', dark);
+  document.getElementById('darkOpt').classList.toggle('sel', !dark);
+}
+
+function renderCats(){
+  const wrap = document.getElementById('cats');
+  wrap.innerHTML = CATEGORIES.map(c =>
+    `<span class="${c===activeCat?'active':''}" onclick="selectCat('${c}', this)">${c}</span>`
+  ).join('');
+}
+function selectCat(c, el){
+  activeCat = c;
+  currentPage = 1;
+  document.querySelectorAll('#cats span').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  renderProducts();
+}
+function selectVehicle(v, el){
+  activeVehicle = v;
+  currentPage = 1;
+  document.querySelectorAll('.fitment-tag').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  renderProducts();
+}
+
+function renderProducts(){
+  const q = (document.getElementById('posSearch').value || '').toLowerCase();
+  const grid = document.getElementById('productGrid');
+  const pager = document.getElementById('productPager');
+  let list = PRODUCTS.filter(p=>{
+    const matchesCat = activeCat === "All" || p.cat === activeCat;
+    const matchesVehicle = activeVehicle === "all" || p.vehicle === activeVehicle || p.vehicle === "all";
+    const matchesQ = !q || p.name.toLowerCase().includes(q) || p.fits.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+    return matchesCat && matchesVehicle && matchesQ;
+  });
+
+  if (list.length === 0){
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px 12px; color:var(--ink-faint); font-size:14px;">No parts match "${q}". Try a different word, or add it as a custom item on the right.</div>`;
+    pager.classList.remove('show');
+    return;
+  }
+
+  // On mobile: exactly 4 cards per page, stacked one per row (a/b/c/d),
+  // paged with ‹ › — never wraps into a second column and never overflows sideways.
+  // On larger screens: full filtered list in the normal scrolling grid.
+  if (isMobile()){
+    const totalPages = Math.max(1, Math.ceil(list.length / MOBILE_PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    const start = (currentPage - 1) * MOBILE_PAGE_SIZE;
+    list = list.slice(start, start + MOBILE_PAGE_SIZE);
+
+    pager.classList.add('show');
+    document.getElementById('pagerStatus').textContent = `${currentPage} of ${totalPages}`;
+    document.getElementById('pagerPrev').disabled = currentPage <= 1;
+    document.getElementById('pagerNext').disabled = currentPage >= totalPages;
+  } else {
+    pager.classList.remove('show');
+  }
+
+  grid.innerHTML = list.map(p=>{
+    const low = p.stock <= p.low;
+    const price = isWholesale ? p.price * 0.85 : p.price;
+    return `
+    <div class="product-card">
+      <span class="stockbadge ${low?'low':'ok'}">${low ? 'Only '+p.stock+' left' : p.stock+' in stock'}</span>
+      <div class="thumb-placeholder">🔧</div>
+      <div class="p-name">${p.name}</div>
+      <div class="p-sku mono">${p.sku}</div>
+      <div class="p-fits">Fits: ${p.fits}</div>
+      <div class="p-row">
+        <div class="p-price">${money(price)}</div>
+        <button class="btn-add-cart" onclick="addToCart(${p.id})" ${p.stock<=0?'disabled':''}>${p.stock<=0?'Out':'+ Add'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addToCart(id){
+  const p = PRODUCTS.find(x=>x.id===id);
+  if (!p) return;
+  const price = isWholesale ? p.price * 0.85 : p.price;
+  const existing = cart.find(l=>l.id===id);
+  if (existing){
+    existing.qty += 1;
+    existing.price = price;
+  } else {
+    cart.push({ id, name:p.name, price, qty:1 });
+  }
+  toast(`Added: ${p.name}`);
+  renderCart();
+}
+
+function changeQty(id, delta){
+  const line = cart.find(l=>l.id===id);
+  if (!line) return;
+  line.qty += delta;
+  if (line.qty <= 0){
+    cart = cart.filter(l=>l.id!==id);
+  }
+  renderCart();
+}
+
+function removeLine(id){
+  cart = cart.filter(l=>l.id!==id);
+  renderCart();
+}
+
+function cartSubtotal(){
+  return cart.reduce((sum,l)=>sum + l.price*l.qty, 0);
+}
+function cartTotal(){
+  return cartSubtotal() * (1+VAT_RATE);
+}
+
+function renderCart(){
+  const wrap = document.getElementById('cartItems');
+  document.getElementById('itemCount').textContent = cart.reduce((s,l)=>s+l.qty,0) + " items";
+
+  if (cart.length === 0){
+    wrap.innerHTML = `<div class="empty">Nothing added yet.<br>Tap a part above to start the sale.</div>`;
+  } else {
+    wrap.innerHTML = cart.map(l=>`
+      <div class="cart-line">
+        <span class="txt">${l.name}</span>
+        <div class="qty-controls">
+          <button class="qty-btn" onclick="changeQty(${l.id},-1)" aria-label="Remove one">−</button>
+          <span class="qty-num mono">${l.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${l.id},1)" aria-label="Add one">+</button>
+          <span class="lprice mono">${money(l.price*l.qty)}</span>
+          <span class="rm" onclick="removeLine(${l.id})" title="Remove item">✕</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const sub = cartSubtotal();
+  const vat = sub * VAT_RATE;
+  const total = sub + vat;
+  document.getElementById('tSub').textContent = money(sub);
+  document.getElementById('tVat').textContent = money(vat);
+  document.getElementById('tTotal').textContent = money(total);
+
+  const btn = document.getElementById('completeBtn');
+  btn.disabled = cart.length === 0;
+  btn.textContent = cart.length === 0 ? "Add items to continue" : `Complete Sale — Collect ${money(total)}`;
+
+  if (payMethod === 'Cash') updateChangeDisplay();
+}
+
+function toggleWholesale(on){
+  isWholesale = on;
+  document.getElementById('btnRetailTier').style.background = on ? 'transparent' : 'var(--accent)';
+  document.getElementById('btnRetailTier').style.color = on ? 'var(--ink-soft)' : '#fff';
+  document.getElementById('btnWholesaleTier').style.background = on ? 'var(--accent)' : 'transparent';
+  document.getElementById('btnWholesaleTier').style.color = on ? '#fff' : 'var(--ink-soft)';
+  cart.forEach(l=>{
+    const p = PRODUCTS.find(x=>x.id===l.id);
+    if (p) l.price = on ? p.price*0.85 : p.price;
+  });
+  renderProducts();
+  renderCart();
+}
+
+function selectPay(m, el){
+  payMethod = m;
+  document.querySelectorAll('#payMethods button').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('cashChangeSection').style.display = (m === 'Cash') ? 'block' : 'none';
+}
+
+function updateChangeDisplay(){
+  const given = parseFloat(document.getElementById('cashGiven').value) || 0;
+  const total = cartTotal();
+  const change = given - total;
+  document.getElementById('changeAmount').textContent = money(Math.max(change,0));
+}
+
+function simulateScan(){
+  const p = PRODUCTS[Math.floor(Math.random()*PRODUCTS.length)];
+  addToCart(p.id);
+  toast(`Scanned: ${p.name}`);
+}
+
+function openManualModal(){ document.getElementById('manualItemModal').classList.add('show'); }
+function closeManualModal(){
+  document.getElementById('manualItemModal').classList.remove('show');
+  document.getElementById('manualItemName').value='';
+  document.getElementById('manualItemPrice').value='';
+  document.getElementById('manualItemQty').value=1;
+}
+function addManualItem(){
+  const name = document.getElementById('manualItemName').value.trim();
+  const price = parseFloat(document.getElementById('manualItemPrice').value);
+  const qty = parseInt(document.getElementById('manualItemQty').value) || 1;
+  if (!name || !price || price <= 0){
+    toast('Please enter a name and a price above zero');
+    return;
+  }
+  manualCounter++;
+  cart.push({ id: manualCounter, name, price, qty });
+  closeManualModal();
+  renderCart();
+  toast(`Added: ${name}`);
+}
+
+function executeCheckout(){
+  if (cart.length === 0) return;
+  const sub = cartSubtotal();
+  const vat = sub*VAT_RATE;
+  const total = sub+vat;
+  const invNo = "INV-" + new Date().toISOString().slice(2,10).replace(/-/g,'') + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+
+  const linesHtml = cart.map(l=>`
+    <div style="display:flex; justify-content:space-between; margin:3px 0;"><span>${l.qty}x ${l.name}</span><span>${money(l.price*l.qty)}</span></div>
+  `).join('');
+
+  document.getElementById('receiptContent').innerHTML = `
+    <div style="text-align:center;">
+      <div style="font-family:'Space Grotesk'; font-weight:700; font-size:17px;">SpareStack Auto Parts</div>
+      <div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">Kumasi Main Branch</div>
+      <div class="mono" style="font-size:12px; color:var(--ink-faint); margin-top:6px;">${invNo}</div>
+    </div>
+    <div style="border-top:1px dashed var(--line); margin:12px 0;"></div>
+    <div style="font-size:14px;">${linesHtml}</div>
+    <div style="border-top:1px dashed var(--line); margin:12px 0;"></div>
+    <div class="totals" style="font-size:14px;">
+      <div><span>Subtotal</span><span class="mono">${money(sub)}</span></div>
+      <div><span>VAT (15%)</span><span class="mono">${money(vat)}</span></div>
+      <div class="grand"><span>Total Paid</span><span class="mono">${money(total)}</span></div>
+    </div>
+    <div style="text-align:center; font-size:12px; color:var(--ink-soft); margin-top:10px;">Paid via ${payMethod} — thank you!</div>
+  `;
+
+  document.getElementById('receiptModal').classList.add('show');
+  toast('Sale completed');
+
+  cart = [];
+  document.getElementById('cashGiven').value = '';
+  renderCart();
+  renderProducts();
+}
+function closeReceiptModal(){
+  document.getElementById('receiptModal').classList.remove('show');
+}
+
+mobileQuery.addEventListener('change', ()=>{ currentPage = 1; renderProducts(); });
+
+renderCats();
+renderProducts();
+renderCart();
+</script>
+</body>
+</html>
